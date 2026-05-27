@@ -1,0 +1,6 @@
+{
+  "name": "TikTok Live 3D Battle Arena",
+  "description": "Interactive 3D battle royale game designed for TikTok Live streaming with auto-updating avatars controlled by viewers via comments, gifts, and live screen taps, featuring Arsenal vs PSG soccer team battle modes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
