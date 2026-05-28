@@ -1,76 +1,320 @@
 import { Gift } from '../types';
 
+// TikTok gift names can vary by region. Using English as primary with Indonesian aliases.
 export const TIKTOK_GIFTS: Gift[] = [
+  // ===== TIER 1: 1-29 coins (Common gifts) =====
   {
     id: 'gift_rose',
     name: 'Rose',
-    label: 'Mawar',
+    label: '🌹 Mawar',
     cost: 1,
     emoji: '🌹',
     color: '#FF4B72',
-    effectDescription: 'Drops +30 HP healing serum near viewer avatar.'
+    effectDescription: 'Healing: drops +30 HP health serum near viewer avatar.',
+    aliases: ['Mawar', 'Rosa', 'Rose'],
+    tiktokGiftIds: [5655, 13221],
+    category: 'heal',
   },
   {
     id: 'gift_heart',
     name: 'Finger Heart',
-    label: 'Cubit Cinta',
+    label: '🫰 Cubit Cinta',
     cost: 5,
     emoji: '🫰',
     color: '#FF6EA7',
-    effectDescription: 'Provides instantly +50 Shield to the user avatar.'
+    effectDescription: 'Shield: instantly +50 Shield to the viewer avatar.',
+    aliases: ['Cubit Cinta', 'FingerHeart', 'Heart', 'Jari Hati'],
+    tiktokGiftIds: [12750, 13222],
+    category: 'shield',
   },
   {
     id: 'gift_icecream',
     name: 'Ice Cream',
-    label: 'Es Krim',
+    label: '🍦 Es Krim',
     cost: 10,
     emoji: '🍦',
     color: '#6EE7B7',
-    effectDescription: 'Summons defensive shield barrier obstacle.'
+    effectDescription: 'Barrier: summons a defensive shield obstacle near viewer.',
+    aliases: ['Es Krim', 'IceCream', 'Es Cream'],
+    tiktokGiftIds: [12942, 13223],
+    category: 'shield',
   },
   {
     id: 'gift_tiktok',
     name: 'TikTok',
-    label: 'TikTok Logo',
+    label: '🎵 TikTok Logo',
     cost: 25,
     emoji: '🎵',
     color: '#25F4EE',
-    effectDescription: 'Equips 3D Glowing Laser Sword with high melee pierce.'
+    effectDescription: 'Weapon: equips Glowing Laser Sword with high melee pierce.',
+    aliases: ['TikTok Logo', 'Logo TikTok'],
+    tiktokGiftIds: [12943, 13224],
+    category: 'weapon',
   },
   {
     id: 'gift_donut',
     name: 'Donut',
-    label: 'Donat',
+    label: '🍩 Donat',
     cost: 30,
     emoji: '🍩',
     color: '#FBBF24',
-    effectDescription: 'Spawns temporary speed serum on user, making them super fast!'
+    effectDescription: 'Buff: restores full HP and increases size/speed.',
+    aliases: ['Donat', 'Doughnut'],
+    tiktokGiftIds: [12965, 13225],
+    category: 'buff',
   },
+
+  // ===== TIER 2: 99 coins (Medium gifts) =====
+  {
+    id: 'gift_hand_heart',
+    name: 'Hand Heart',
+    label: '💝 Love Hug',
+    cost: 99,
+    emoji: '💝',
+    color: '#FF69B4',
+    effectDescription: 'Shield+: grants +80 Shield instantly.',
+    aliases: ['Love Hug', 'HandHeart', 'Hati Tangan', 'Heart Hands'],
+    tiktokGiftIds: [12937, 13238],
+    category: 'shield',
+  },
+  {
+    id: 'gift_love_letter',
+    name: 'Love Letter',
+    label: '💌 Surat Cinta',
+    cost: 99,
+    emoji: '💌',
+    color: '#FF1493',
+    effectDescription: 'Full Heal: restores all HP + bonus shield.',
+    aliases: ['Surat Cinta', 'LoveLetter', 'Mail'],
+    tiktokGiftIds: [12938, 13239],
+    category: 'heal',
+  },
+  {
+    id: 'gift_cotton_candy',
+    name: 'Cotton Candy',
+    label: '🍭 Permen Kapas',
+    cost: 99,
+    emoji: '🍭',
+    color: '#FFB6C1',
+    effectDescription: 'Speed+: super speed boost for 5 seconds.',
+    aliases: ['Permen Kapas', 'CottonCandy', 'Candy'],
+    tiktokGiftIds: [12966, 13240],
+    category: 'speed',
+  },
+  {
+    id: 'gift_cute_face',
+    name: 'Cute Face',
+    label: '🥺 Wajah Imut',
+    cost: 99,
+    emoji: '🥺',
+    color: '#F472B6',
+    effectDescription: 'Random buff: one random beneficial effect.',
+    aliases: ['Wajah Imut', 'CuteFace', 'Face'],
+    tiktokGiftIds: [12939, 13241],
+    category: 'buff',
+  },
+
+  // ===== TIER 2b: Gift Box / Crate =====
   {
     id: 'gift_box',
     name: 'Crate Drop',
-    label: 'Airdrop Box',
+    label: '🎁 Airdrop Box',
     cost: 99,
     emoji: '🎁',
     color: '#FB7185',
-    effectDescription: 'Drops a Golden Lance weapon crate from sky for viewer.'
+    effectDescription: 'Weapon crate: drops Golden Lance weapon from sky.',
+    aliases: ['Box', 'Kado', 'Gift Box', 'Crate', 'Hadiah', 'Gift'],
+    tiktokGiftIds: [12944, 13242],
+    category: 'weapon',
+  },
+
+  // ===== TIER 3: 200-499 coins (Premium gifts) =====
+  {
+    id: 'gift_star',
+    name: 'Star',
+    label: '⭐ Bintang',
+    cost: 299,
+    emoji: '⭐',
+    color: '#FFD700',
+    effectDescription: 'Damage: deals AOE damage to nearby enemies.',
+    aliases: ['Bintang', 'Shining Star'],
+    tiktokGiftIds: [12946, 13243],
+    category: 'attack',
   },
   {
     id: 'gift_diamond',
     name: 'Diamond',
-    label: 'Berlian',
+    label: '💎 Berlian',
     cost: 299,
     emoji: '💎',
     color: '#3B82F6',
-    effectDescription: 'Summons dynamic orbital strike that damages surrounding foes!'
+    effectDescription: 'Orbital strike: deals 60 damage to nearby foes!',
+    aliases: ['Berlian', 'Intan', 'Diamond'],
+    tiktokGiftIds: [12940, 13244],
+    category: 'attack',
+  },
+  {
+    id: 'gift_rainbow',
+    name: 'Rainbow',
+    label: '🌈 Pelangi',
+    cost: 299,
+    emoji: '🌈',
+    color: '#8B5CF6',
+    effectDescription: 'Team heal: heals all teammates +30 HP each.',
+    aliases: ['Pelangi', 'Rainbow'],
+    tiktokGiftIds: [12947, 13245],
+    category: 'heal',
+  },
+  {
+    id: 'gift_moon',
+    name: 'Moon',
+    label: '🌙 Bulan',
+    cost: 299,
+    emoji: '🌙',
+    color: '#C084FC',
+    effectDescription: 'Buff: doubles attack power for 10 seconds.',
+    aliases: ['Bulan', 'Crescent Moon'],
+    tiktokGiftIds: [12948, 13246],
+    category: 'buff',
+  },
+
+  // ===== TIER 4: 500-1999 coins (Luxury gifts) =====
+  {
+    id: 'gift_crown',
+    name: 'Crown',
+    label: '👑 Mahkota',
+    cost: 500,
+    emoji: '👑',
+    color: '#F59E0B',
+    effectDescription: 'Empower: size +50% and all stats boosted.',
+    aliases: ['Mahkota', 'King Crown'],
+    tiktokGiftIds: [12949, 13247],
+    category: 'buff',
+  },
+  {
+    id: 'gift_galaxy',
+    name: 'Galaxy',
+    label: '🚀 Galaksi',
+    cost: 500,
+    emoji: '🚀',
+    color: '#A855F7',
+    effectDescription: 'Airstrike: massive AOE explosion on arena.',
+    aliases: ['Galaksi', 'Galactic'],
+    tiktokGiftIds: [12950, 13248],
+    category: 'attack',
+  },
+  {
+    id: 'gift_firework',
+    name: 'Firework',
+    label: '🎆 Kembang Api',
+    cost: 1000,
+    emoji: '🎆',
+    color: '#FF4500',
+    effectDescription: 'Explosion: huge fireworks damage to all enemies.',
+    aliases: ['Kembang Api', 'Fireworks', 'Fountain'],
+    tiktokGiftIds: [12951, 13249],
+    category: 'attack',
+  },
+  {
+    id: 'gift_black_card',
+    name: 'Black Card',
+    label: '💳 Kartu Hitam',
+    cost: 1000,
+    emoji: '💳',
+    color: '#1E293B',
+    effectDescription: 'Super Shield: max shield + damage reflection.',
+    aliases: ['Kartu Hitam', 'BlackCard', 'Card'],
+    tiktokGiftIds: [12952, 13250],
+    category: 'shield',
+  },
+  {
+    id: 'gift_rocket',
+    name: 'Rocket',
+    label: '🚀 Roket',
+    cost: 1999,
+    emoji: '🚀',
+    color: '#EF4444',
+    effectDescription: 'Charge: dashing attack that pierces enemies.',
+    aliases: ['Roket', 'Missile'],
+    tiktokGiftIds: [12953, 13251],
+    category: 'attack',
+  },
+  {
+    id: 'gift_trex',
+    name: 'T-Rex',
+    label: '🦖 Tyrannosaurus',
+    cost: 1999,
+    emoji: '🦖',
+    color: '#22C55E',
+    effectDescription: 'Monster: grows 2x size with massive HP.',
+    aliases: ['T-Rex', 'Tyrannosaurus', 'Rex', 'Dinosaur', 'Dinosaurus'],
+    tiktokGiftIds: [12954, 13252],
+    category: 'buff',
+  },
+  {
+    id: 'gift_lion',
+    name: 'Lion',
+    label: '🦁 Singa',
+    cost: 1999,
+    emoji: '🦁',
+    color: '#F97316',
+    effectDescription: 'Roar: stuns nearby enemies briefly.',
+    aliases: ['Singa', 'Lion King', 'Leo'],
+    tiktokGiftIds: [12955, 13253],
+    category: 'attack',
+  },
+
+  // ===== TIER 5: 5000+ coins (Ultra luxury) =====
+  {
+    id: 'gift_spaceship',
+    name: 'Spaceship',
+    label: '🛸 Pesawat Luar Angkasa',
+    cost: 5000,
+    emoji: '🛸',
+    color: '#06B6D4',
+    effectDescription: 'Uber strike: massive orbital beam on enemies.',
+    aliases: ['Pesawat Luar Angkasa', 'UFO', 'Alien Ship'],
+    tiktokGiftIds: [12956, 13254],
+    category: 'attack',
   },
   {
     id: 'gift_universe',
     name: 'Universe',
-    label: 'Alam Semesta',
+    label: '🌌 Alam Semesta',
     cost: 34999,
     emoji: '🌌',
     color: '#8B5CF6',
-    effectDescription: 'Viewer grows 3x BIGGER, gains 250 Max HP and a Golden Weapon!'
-  }
+    effectDescription: 'Giant Boss: viewer grows 3x, gains 250 Max HP + Golden Weapon!',
+    aliases: ['Alam Semesta', 'Semesta', 'Ultimate', 'Cosmos'],
+    tiktokGiftIds: [12957, 13255],
+    category: 'massive',
+  },
+];
+
+/**
+ * Static map of known TikTok gift IDs to our internal gift IDs.
+ * If a TikTok gift has no known ID mapping, we fall back to name matching.
+ */
+export const TIKTOK_GIFT_ID_MAP: Record<number, string> = {};
+TIKTOK_GIFTS.forEach((gift) => {
+  (gift.tiktokGiftIds || []).forEach((tid) => {
+    TIKTOK_GIFT_ID_MAP[tid] = gift.id;
+  });
+});
+
+/**
+ * Known high-value gift IDs that should trigger special effects.
+ * Extracted from TikTok's common gift catalog.
+ */
+export const SPECIAL_GIFT_IDS: number[] = [
+  // Diamond (299)
+  12940, 13244,
+  // Lion (1999)
+  12955, 13253,
+  // T-Rex (1999)
+  12954, 13252,
+  // Spaceship (5000)
+  12956, 13254,
+  // Universe (34999)
+  12957, 13255,
 ];
