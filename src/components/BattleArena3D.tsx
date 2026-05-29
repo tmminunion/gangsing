@@ -2053,7 +2053,10 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     });
     
     let boxMesh: THREE.Object3D;
-    if (customAirdropGeometriesRef.current.length > 0) {
+    // Peluang 50% menggunakan model kustom (jika ada), 50% menggunakan kubus tekstur huruf bawaan agar bervariasi
+    const useCustomAirdrop = customAirdropGeometriesRef.current.length > 0 && Math.random() < 0.5;
+
+    if (useCustomAirdrop) {
       const idx = Math.floor(Math.random() * customAirdropGeometriesRef.current.length);
       const template = customAirdropGeometriesRef.current[idx];
       const customBoxMesh = template.clone();
