@@ -27,6 +27,7 @@ export interface BattleArenaRef {
   importOBJFromUrl: (url: string, filename: string) => void;
   clearAllImportedOBJs: () => void;
   changeFloorTheme: (theme: string) => void;
+  respawnObstacles: () => void;
 }
 
 export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
@@ -887,6 +888,21 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
 
     changeFloorTheme: (theme: string) => {
       applyFloorTheme(theme);
+    },
+
+    respawnObstacles: () => {
+      if (!mainSceneRef.current) return;
+      console.log('[Import] Respawning obstacles with new models');
+      obstaclesRef.current.forEach(obs => {
+        if (mainSceneRef.current) mainSceneRef.current.remove(obs);
+      });
+      obstaclesRef.current = [];
+      
+      for (let i = 0; i < 5; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const d = 10 + Math.random() * 20;
+        spawnObstacleAt(Math.cos(ang) * d, Math.sin(ang) * d);
+      }
     },
 
     addPlayer: (username: string, nickname: string, isPremium = false, forcedColor?: string) => {

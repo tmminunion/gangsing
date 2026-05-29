@@ -376,6 +376,7 @@ export default function App() {
           // Wait for BattleArena3D component to fully mount
           setTimeout(() => {
             if (battleArenaRef.current) {
+              let hasObstacles = false;
               if (data.airdrops && data.airdrops.length > 0) {
                 data.airdrops.forEach((asset: any) => {
                   console.log('[Assets] Loading pre-uploaded airdrop:', asset.filename);
@@ -383,10 +384,20 @@ export default function App() {
                 });
               }
               if (data.objects && data.objects.length > 0) {
+                hasObstacles = true;
                 data.objects.forEach((asset: any) => {
                   console.log('[Assets] Loading pre-uploaded obstacle:', asset.filename);
                   battleArenaRef.current?.importOBJFromUrl(`${relayHttpUrl}${asset.url}`, asset.filename);
                 });
+              }
+
+              // Jika ada obstacles kustom yang dimuat, tunggu proses parsing OBJLoader (sekitar 3 detik)
+              // lalu picu respawn agar model kustom langsung nampang di arena!
+              if (hasObstacles) {
+                setTimeout(() => {
+                  console.log('[Assets] Triggering initial obstacle respawn with newly loaded custom meshes!');
+                  battleArenaRef.current?.respawnObstacles();
+                }, 3000);
               }
             }
           }, 3000);
