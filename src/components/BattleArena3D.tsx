@@ -44,7 +44,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
   // References to keep game state fast & avoid React re-render lags
   const playersRef = useRef<Map<string, Player>>(new Map());
   const airdropsRef = useRef<Airdrop[]>([]);
-  const obstaclesRef = useRef<THREE.Mesh[]>([]);
+  const obstaclesRef = useRef<THREE.Object3D[]>([]);
   const projectileRef = useRef<{ id: string; mesh: THREE.Mesh; targetX: number; targetZ: number; speed: number; damage: number; owner: string }[]>([]);
   const particlesRef = useRef<{ mesh: THREE.Points; life: number; velocity: THREE.Vector3[] }[]>([]);
   const glassShardsRef = useRef<{ mesh: THREE.Mesh; vx: number; vy: number; vz: number; rotX: number; rotY: number; rotZ: number; life: number; maxLife: number }[]>([]);
@@ -83,6 +83,8 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
   const cameraShakeRef = useRef<{ intensity: number; decay: number; offsetX: number; offsetZ: number }>({ intensity: 0, decay: 0.9, offsetX: 0, offsetZ: 0 });
   // MVP golden effects tracking
   const mvpPlayerIdRef = useRef<string | null>(null);
+  const customObstacleGeometriesRef = useRef<THREE.Group[]>([]);
+  const customAirdropGeometriesRef = useRef<THREE.Group[]>([]);
 
   // Track consecutive kills per player for streak announcements
   const killStreakRef = useRef<Map<string, { count: number; lastKillTime: number }>>(new Map());
@@ -784,36 +786,26 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
           url,
           (obj) => {
             console.log('[Import] OBJ parsed, children:', obj.children.length);
-            // Force material ungu metalik ke semua mesh
-            obj.traverse((child) => {
-              if ((child as THREE.Mesh).isMesh) {
-                (child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
-                  color: 0xa78bfa,
-                  metalness: 0.5,
-                  roughness: 0.4,
-                  side: THREE.DoubleSide,
-                });
-                (child as THREE.Mesh).castShadow = true;
-                (child as THREE.Mesh).receiveShadow = true;
-              }
-            });
-            // Auto-scale setelah material di-set
+            
             const box = new THREE.Box3().setFromObject(obj);
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
-            console.log('[Import] Bounding box size:', size, 'maxDim:', maxDim);
             if (maxDim > 0.001) {
-              obj.scale.setScalar(8 / maxDim);
+              obj.scale.setScalar(1.5 / maxDim);
             } else {
               obj.scale.setScalar(1);
             }
-            // Taruh di tengah arena di atas lantai
-            obj.position.set(0, 2, 0);
-            obj.name = `imported_${file.name}`;
-            mainSceneRef.current!.add(obj);
+
+            obj.name = file.name;
+            const lowerName = file.name.toLowerCase();
+            if (lowerName.includes('airdrop') || lowerName.includes('air_drop')) {
+              customAirdropGeometriesRef.current.push(obj);
+              alert(`✅ Berhasil memuat model Airdrop kustom: ${file.name}`);
+            } else {
+              customObstacleGeometriesRef.current.push(obj);
+              alert(`✅ Berhasil memuat model Rintangan/Batu kustom: ${file.name}`);
+            }
             URL.revokeObjectURL(url);
-            console.log('[Import] OBJ added to scene!');
-            alert(`✅ OBJ berhasil dimuat: ${file.name}\nObjek muncul di tengah arena.`);
           },
           (progress) => {
             console.log('[Import] Progress:', progress.loaded, '/', progress.total);
@@ -839,33 +831,25 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
           url,
           (obj) => {
             console.log('[Import] OBJ from URL parsed, children:', obj.children.length);
-            // Force material ungu metalik ke semua mesh
-            obj.traverse((child) => {
-              if ((child as THREE.Mesh).isMesh) {
-                (child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
-                  color: 0xa78bfa,
-                  metalness: 0.5,
-                  roughness: 0.4,
-                  side: THREE.DoubleSide,
-                });
-                (child as THREE.Mesh).castShadow = true;
-                (child as THREE.Mesh).receiveShadow = true;
-              }
-            });
-            // Auto-scale
+            
             const box = new THREE.Box3().setFromObject(obj);
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
             if (maxDim > 0.001) {
-              obj.scale.setScalar(8 / maxDim);
+              obj.scale.setScalar(1.5 / maxDim);
             } else {
               obj.scale.setScalar(1);
             }
-            // Taruh di tengah arena di atas lantai
-            obj.position.set(0, 2, 0);
-            obj.name = `imported_${filename}`;
-            mainSceneRef.current!.add(obj);
-            console.log('[Import] OBJ from URL added to scene:', filename);
+
+            obj.name = filename;
+            const lowerName = filename.toLowerCase();
+            if (lowerName.includes('airdrop') || lowerName.includes('air_drop')) {
+              customAirdropGeometriesRef.current.push(obj);
+              console.log(`[Import] Registered custom airdrop model: ${filename}`);
+            } else {
+              customObstacleGeometriesRef.current.push(obj);
+              console.log(`[Import] Registered custom obstacle model: ${filename}`);
+            }
           },
           (progress) => {
             console.log('[Import] URL progress:', progress.loaded, '/', progress.total);
@@ -882,6 +866,8 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     clearAllImportedOBJs: () => {
       if (!mainSceneRef.current) return;
       console.log('[Import] Clearing all imported OBJs');
+      customObstacleGeometriesRef.current = [];
+      customAirdropGeometriesRef.current = [];
       const toRemove: THREE.Object3D[] = [];
       mainSceneRef.current.traverse((child) => {
         if (child.name && child.name.startsWith('imported_')) {
@@ -1889,10 +1875,6 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
   const spawnObstacleAt = (x: number, z: number) => {
     if (!mainSceneRef.current) return;
 
-    // Randomize shape (3 = Triangle, 4 = Square, 5 = Pentagon, 6 = Hexagon, 8 = Octagon)
-    const shapeSegments = [3, 4, 5, 6, 8];
-    const segments = shapeSegments[Math.floor(Math.random() * shapeSegments.length)];
-
     // Randomize glowing crystal color palette (Vibrant neon colors)
     const obstacleColors = [
       0x8B5CF6, // Purple
@@ -1905,20 +1887,58 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     ];
     const chosenColor = obstacleColors[Math.floor(Math.random() * obstacleColors.length)];
 
-    // Glowing crystal geometry and material
-    const height = 3 + Math.random() * 4;
-    const geo = new THREE.CylinderGeometry(0.8, 1.2, height, segments);
-    const mat = new THREE.MeshStandardMaterial({
-      color: chosenColor,
-      emissive: chosenColor,
-      emissiveIntensity: 0.4, // Glow nicely
-      roughness: 0.25,
-      metalness: 0.8
-    });
-    const obs = new THREE.Mesh(geo, mat);
-    obs.position.set(x, height / 2, z);
-    obs.castShadow = true;
-    obs.receiveShadow = true;
+    let obs: THREE.Object3D;
+
+    if (customObstacleGeometriesRef.current.length > 0) {
+      const idx = Math.floor(Math.random() * customObstacleGeometriesRef.current.length);
+      const template = customObstacleGeometriesRef.current[idx];
+      const customObs = template.clone();
+      
+      // Randomize height scale slightly
+      const heightScale = 1.0 + (Math.random() - 0.5) * 0.4;
+      customObs.scale.multiplyScalar(heightScale);
+      
+      // Randomize rotation
+      customObs.rotation.y = Math.random() * Math.PI * 2;
+      
+      // Position Y aligned to sit on ground
+      customObs.position.set(x, 0.1, z);
+      
+      customObs.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          (child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
+            color: chosenColor,
+            emissive: chosenColor,
+            emissiveIntensity: 0.4, // Glow nicely
+            roughness: 0.25,
+            metalness: 0.8,
+            side: THREE.DoubleSide
+          });
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      obs = customObs;
+    } else {
+      // Fallback: Random shape cylinder segments
+      const shapeSegments = [3, 4, 5, 6, 8];
+      const segments = shapeSegments[Math.floor(Math.random() * shapeSegments.length)];
+      const height = 3 + Math.random() * 4;
+      const geo = new THREE.CylinderGeometry(0.8, 1.2, height, segments);
+      const mat = new THREE.MeshStandardMaterial({
+        color: chosenColor,
+        emissive: chosenColor,
+        emissiveIntensity: 0.4, // Glow nicely
+        roughness: 0.25,
+        metalness: 0.8
+      });
+      const fallbackMesh = new THREE.Mesh(geo, mat);
+      fallbackMesh.position.set(x, height / 2, z);
+      fallbackMesh.castShadow = true;
+      fallbackMesh.receiveShadow = true;
+      obs = fallbackMesh;
+    }
+
     mainSceneRef.current.add(obs);
     obstaclesRef.current.push(obs);
   };
@@ -2007,8 +2027,33 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       metalness: 0.5,
       roughness: 0.4
     });
-    const boxMesh = new THREE.Mesh(boxGeo, boxMat);
-    boxMesh.castShadow = true;
+    
+    let boxMesh: THREE.Object3D;
+    if (customAirdropGeometriesRef.current.length > 0) {
+      const idx = Math.floor(Math.random() * customAirdropGeometriesRef.current.length);
+      const template = customAirdropGeometriesRef.current[idx];
+      const customBoxMesh = template.clone();
+      
+      customBoxMesh.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh) {
+          (child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
+            color: boxColor,
+            emissive: boxColor,
+            emissiveIntensity: 0.3,
+            roughness: 0.4,
+            metalness: 0.6,
+            side: THREE.DoubleSide
+          });
+          child.castShadow = true;
+          child.receiveShadow = true;
+        }
+      });
+      boxMesh = customBoxMesh;
+    } else {
+      boxMesh = new THREE.Mesh(boxGeo, boxMat);
+      boxMesh.castShadow = true;
+    }
+    
     boxMesh.name = 'box';
     group.add(boxMesh);
 
