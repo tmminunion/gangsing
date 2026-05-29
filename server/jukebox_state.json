@@ -1,11 +1,7 @@
 {
-  "currentYoutubeId": "eXP0JfoVkIE",
-  "currentYoutubeTitle": "FUNKOT - AKU KAU SAKITI [ GAMMA 1] NEW REMIX COVER DJ ALMIRA BERTO",
+  "currentYoutubeId": "IyKuS3z4zb0",
+  "currentYoutubeTitle": "GOTHIC METAL INDONESIA - BATU NISAN - JERITAN NURANI LIRIK",
   "jukeboxQueue": [
-    {
-      "videoId": "IyKuS3z4zb0",
-      "title": "GOTHIC METAL INDONESIA - BATU NISAN - JERITAN NURANI LIRIK"
-    },
     {
       "videoId": "hTWKbfoikeg",
       "title": "Nirvana - Smells Like Teen Spirit (Official Music Video)"
@@ -35,10 +31,6 @@
       "title": "GOTHIC METAL INDONESIA - BATU NISAN - JERITAN NURANI LIRIK"
     },
     {
-      "videoId": "IyKuS3z4zb0",
-      "title": "GOTHIC METAL INDONESIA - BATU NISAN - JERITAN NURANI LIRIK"
-    },
-    {
       "videoId": "hTWKbfoikeg",
       "title": "Nirvana - Smells Like Teen Spirit (Official Music Video)"
     },
@@ -81,22 +73,6 @@
     {
       "videoId": "hTWKbfoikeg",
       "title": "Nirvana - Smells Like Teen Spirit (Official Music Video)"
-    },
-    {
-      "videoId": "jnzSLYLD0m0",
-      "title": "MALAM TERAKHIR - Simpatik Music | Fira Cantika X Irwan Krisdiyanto (Official Music Video)"
-    },
-    {
-      "videoId": "jnzSLYLD0m0",
-      "title": "MALAM TERAKHIR - Simpatik Music | Fira Cantika X Irwan Krisdiyanto (Official Music Video)"
-    },
-    {
-      "videoId": "jnzSLYLD0m0",
-      "title": "MALAM TERAKHIR - Simpatik Music | Fira Cantika X Irwan Krisdiyanto (Official Music Video)"
-    },
-    {
-      "videoId": "jnzSLYLD0m0",
-      "title": "MALAM TERAKHIR - Simpatik Music | Fira Cantika X Irwan Krisdiyanto (Official Music Video)"
     },
     {
       "videoId": "jnzSLYLD0m0",
@@ -315,20 +291,8 @@
       "title": "PANTUN JANDA - Difarina Indra Adella Ft. Fendik Adella - OM ADELLA"
     },
     {
-      "videoId": "HwJrCDENiFg",
-      "title": "FUNKOT - KARI CERITO || COVER BY DJ SELLY SEMLEHOY"
-    },
-    {
-      "videoId": "1XHrqoveUc4",
-      "title": "PANTUN JANDA - Difarina Indra Adella Ft. Fendik Adella - OM ADELLA"
-    },
-    {
       "videoId": "vAp-ONRGQd0",
       "title": "SEMBILU BERBISA REMIX COVER - DJ SELLY SEMELEHOY"
-    },
-    {
-      "videoId": "HwJrCDENiFg",
-      "title": "FUNKOT - KARI CERITO || COVER BY DJ SELLY SEMLEHOY"
     },
     {
       "videoId": "1XHrqoveUc4",
@@ -368,7 +332,7 @@
     }
   ],
   "isAutoplay": true,
-  "isShuffle": false,
+  "isShuffle": true,
   "floorTheme": "scifi",
   "activeSessionId": "c269fd11dc08f8a3b142d164fff1af50"
 }

@@ -1889,15 +1889,34 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
   const spawnObstacleAt = (x: number, z: number) => {
     if (!mainSceneRef.current) return;
 
-    // Glowing hex crystal pillar
-    const geo = new THREE.CylinderGeometry(0.8, 1.2, 3 + Math.random() * 4, 6);
+    // Randomize shape (3 = Triangle, 4 = Square, 5 = Pentagon, 6 = Hexagon, 8 = Octagon)
+    const shapeSegments = [3, 4, 5, 6, 8];
+    const segments = shapeSegments[Math.floor(Math.random() * shapeSegments.length)];
+
+    // Randomize glowing crystal color palette (Vibrant neon colors)
+    const obstacleColors = [
+      0x8B5CF6, // Purple
+      0xEC4899, // Pink
+      0x3B82F6, // Blue
+      0x10B981, // Jade Green
+      0xF59E0B, // Gold/Amber
+      0xEF4444, // Red
+      0x06B6D4  // Cyan
+    ];
+    const chosenColor = obstacleColors[Math.floor(Math.random() * obstacleColors.length)];
+
+    // Glowing crystal geometry and material
+    const height = 3 + Math.random() * 4;
+    const geo = new THREE.CylinderGeometry(0.8, 1.2, height, segments);
     const mat = new THREE.MeshStandardMaterial({
-      color: 0x475569,
-      emissive: 0x1e293b,
-      roughness: 0.4
+      color: chosenColor,
+      emissive: chosenColor,
+      emissiveIntensity: 0.4, // Glow nicely
+      roughness: 0.25,
+      metalness: 0.8
     });
     const obs = new THREE.Mesh(geo, mat);
-    obs.position.set(x, 1.5, z);
+    obs.position.set(x, height / 2, z);
     obs.castShadow = true;
     obs.receiveShadow = true;
     mainSceneRef.current.add(obs);
@@ -4115,6 +4134,16 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
             p.x += (dx / dist) * 0.5;
             p.z += (dz / dist) * 0.5;
             p.targetX = undefined; // trigger path recalculation
+
+            // Reduce HP on collision (damage: 5 HP, cooldown: 1.0s)
+            const obsId = obs.uuid || 'generic_obs';
+            const throttleKey = `obs_hit_${obsId}`;
+            if (!(p as any)[throttleKey] || (now - (p as any)[throttleKey] > 1000)) {
+              (p as any)[throttleKey] = now;
+              damagePlayer(p, 5, 'OBSTACLE');
+              createSpawnExplosion(p.x, p.y + 0.3, p.z, '#ef4444', 6);
+              addFloatingCombatText('💥 TABRAK BATU! (-5 HP)', p.x, p.y + 1.2, p.z, '#ef4444');
+            }
           }
         });
 
