@@ -837,9 +837,9 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z);
             if (maxDim > 0.001) {
-              obj.scale.setScalar(1.5 / maxDim);
+              obj.scale.setScalar(4.5 / maxDim);
             } else {
-              obj.scale.setScalar(1);
+              obj.scale.setScalar(4.5);
             }
 
             obj.name = filename;
@@ -1910,7 +1910,10 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
 
     let obs: THREE.Object3D;
 
-    if (customObstacleGeometriesRef.current.length > 0) {
+    // 50% chance to use custom model, 50% chance to use default shapes (segi-segi) to ensure variation
+    const useCustom = customObstacleGeometriesRef.current.length > 0 && Math.random() < 0.5;
+
+    if (useCustom) {
       const idx = Math.floor(Math.random() * customObstacleGeometriesRef.current.length);
       const template = customObstacleGeometriesRef.current[idx];
       const customObs = template.clone();
@@ -1941,7 +1944,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       });
       obs = customObs;
     } else {
-      // Fallback: Random shape cylinder segments
+      // Fallback: Random shape cylinder segments (batu segi-segi)
       const shapeSegments = [3, 4, 5, 6, 8];
       const segments = shapeSegments[Math.floor(Math.random() * shapeSegments.length)];
       const height = 3 + Math.random() * 4;
