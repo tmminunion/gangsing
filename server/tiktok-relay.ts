@@ -362,7 +362,7 @@ async function fetchWebspySong() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        prompt: 'Rekomendasi 1 judul lagu Indonesia hit secara acak/random yang populer saat ini. Cukup berikan format: Judul Lagu - Nama Penyanyi (tanpa teks penjelasan lain)'
+        prompt: 'Berdasarkan history tontonan akun ini dan minat personal (Metal Gothic Indonesia, Dangdut Koplo, DJ, Funkot, Pop Indonesia, atau lagu trending), berikan 1 rekomendasi lagu YouTube yang berbeda dari sebelumnya. Cukup berikan format: Judul Lagu - Nama Penyanyi (tanpa teks penjelasan lain)'
       })
     });
 
@@ -527,6 +527,13 @@ async function connectToTikTok(username: string) {
     // Jukebox auto-play/queue via chat comment
     const text = (msg.text || '').trim();
     const match = text.match(/^(?:music|play|mainkan|putar|request|next)\s+(.+)/i);
+    const discoMatch = text.match(/^!(?:disco|party)/i);
+
+    if (discoMatch) {
+      console.log(`🪩 Disco mode requested via chat`);
+      broadcast({ type: 'trigger_disco', duration: 15 });
+    }
+
     if (match) {
       const query = match[1].trim();
       if (query) {
@@ -797,6 +804,7 @@ wss.on('connection', (ws: WebSocket) => {
         // Panggil webspy paksa walaupun antrean masih ada
         isAutoFilling = false; // Reset lock just in case
         fetchWebspySong();
+        broadcast({ type: 'trigger_disco', duration: 20 });
         break;
       }
 
