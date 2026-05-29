@@ -842,13 +842,18 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
             }
 
             obj.name = filename;
+            const lowerUrl = url.toLowerCase();
             const lowerName = filename.toLowerCase();
-            if (lowerName.includes('airdrop') || lowerName.includes('air_drop')) {
+            if (
+              lowerUrl.includes('/airdrop/') ||
+              lowerName.includes('airdrop') ||
+              lowerName.includes('air_drop')
+            ) {
               customAirdropGeometriesRef.current.push(obj);
-              console.log(`[Import] Registered custom airdrop model: ${filename}`);
+              console.log(`[Import] Registered custom airdrop model from URL/filename: ${filename}`);
             } else {
               customObstacleGeometriesRef.current.push(obj);
-              console.log(`[Import] Registered custom obstacle model: ${filename}`);
+              console.log(`[Import] Registered custom obstacle model from URL/filename: ${filename}`);
             }
           },
           (progress) => {

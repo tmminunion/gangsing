@@ -58,6 +58,22 @@ Dashboard pengontrol `/dash` memiliki fitur canggih untuk mengubah gaya arena se
 
 ---
 
+## 📂 Fitur Kustom Aset Dinamis (Custom OBJ Models)
+
+Aa Baim sekarang bisa memasukkan model 3D kustom langsung ke folder proyek untuk digunakan secara dinamis di dalam permainan!
+
+* **`assets/airdrop/` (Airdrop Kustom)**: 
+  * Letakkan file `.obj` apa saja di folder ini (misal: `12221_Cat_v1_l3.obj` atau `Car Obj.obj`).
+  * Sistem akan memuat model tersebut secara dinamis. Saat airdrop jatuh dari langit, model kustom aa Baim akan terpilih secara acak dan mendarat di arena sebagai kotak bantuan spesial!
+* **`assets/object/` (Rintangan Fisik Kustom)**:
+  * Letakkan file `.obj` apa saja di folder ini.
+  * Model 3D tersebut akan langsung dimuat sebagai batu/rintangan kustom di dalam arena pertempuran!
+  * Jika gangsing bertabrakan dengan rintangan ini, HP gangsing akan berkurang dan memberikan variasi warna-warni yang asik saat benturan.
+
+Semua file di dalam folder `/assets` disajikan secara statis dan otomatis di-scan oleh server lewat endpoint `/api/custom-assets` saat game dimulai.
+
+---
+
 ## 🚀 Cara Menjalankan Aplikasi
 
 1. **Instal Dependensi**:

@@ -43,6 +43,15 @@ if (!fs.existsSync(IMPORTED_DIR)) {
 // Serve imported files statically
 app.use('/imported', express.static(IMPORTED_DIR));
 
+// Serve local assets folder statically
+const ASSETS_DIR = path.join(process.cwd(), 'assets');
+if (!fs.existsSync(ASSETS_DIR)) {
+  fs.mkdirSync(ASSETS_DIR, { recursive: true });
+  fs.mkdirSync(path.join(ASSETS_DIR, 'airdrop'), { recursive: true });
+  fs.mkdirSync(path.join(ASSETS_DIR, 'object'), { recursive: true });
+}
+app.use('/assets', express.static(ASSETS_DIR));
+
 // Import assets persistence structures
 interface ImportedAsset {
   filename: string;
@@ -235,6 +244,50 @@ app.post('/api/clear-objs', (req, res) => {
   } catch (err: any) {
     console.error('[Upload] Failed to clear assets:', err?.message || err);
     res.status(500).json({ success: false, error: 'Failed to clear assets' });
+  }
+});
+
+// Endpoint to list custom assets inside /assets/airdrop and /assets/object
+app.get('/api/custom-assets', (req, res) => {
+  try {
+    const airdropDir = path.join(process.cwd(), 'assets', 'airdrop');
+    const objectDir = path.join(process.cwd(), 'assets', 'object');
+
+    const airdrops: { filename: string; url: string }[] = [];
+    const objects: { filename: string; url: string }[] = [];
+
+    if (fs.existsSync(airdropDir)) {
+      const files = fs.readdirSync(airdropDir);
+      for (const file of files) {
+        if (file.toLowerCase().endsWith('.obj')) {
+          airdrops.push({
+            filename: file,
+            url: `/assets/airdrop/${file}`
+          });
+        }
+      }
+    }
+
+    if (fs.existsSync(objectDir)) {
+      const files = fs.readdirSync(objectDir);
+      for (const file of files) {
+        if (file.toLowerCase().endsWith('.obj')) {
+          objects.push({
+            filename: file,
+            url: `/assets/object/${file}`
+          });
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      airdrops,
+      objects
+    });
+  } catch (err: any) {
+    console.error('[AssetsStore] Failed to read custom assets directory:', err?.message || err);
+    res.status(500).json({ success: false, error: 'Failed to read custom assets' });
   }
 });
 

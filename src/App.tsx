@@ -364,6 +364,41 @@ export default function App() {
     }
   }, [currentYoutubeId]);
 
+  // Load custom pre-uploaded assets from /assets/airdrop and /assets/object directories
+  useEffect(() => {
+    const loadPreUploadedAssets = async () => {
+      const relayHttpUrl = `http://${window.location.hostname}:3011`;
+      try {
+        const response = await fetch(`${relayHttpUrl}/api/custom-assets`);
+        const data = await response.json();
+        if (data.success) {
+          console.log('[Assets] Loaded custom pre-uploaded assets:', data);
+          // Wait for BattleArena3D component to fully mount
+          setTimeout(() => {
+            if (battleArenaRef.current) {
+              if (data.airdrops && data.airdrops.length > 0) {
+                data.airdrops.forEach((asset: any) => {
+                  console.log('[Assets] Loading pre-uploaded airdrop:', asset.filename);
+                  battleArenaRef.current?.importOBJFromUrl(`${relayHttpUrl}${asset.url}`, asset.filename);
+                });
+              }
+              if (data.objects && data.objects.length > 0) {
+                data.objects.forEach((asset: any) => {
+                  console.log('[Assets] Loading pre-uploaded obstacle:', asset.filename);
+                  battleArenaRef.current?.importOBJFromUrl(`${relayHttpUrl}${asset.url}`, asset.filename);
+                });
+              }
+            }
+          }, 3000);
+        }
+      } catch (err) {
+        console.error('[Assets] Failed to fetch custom pre-uploaded assets:', err);
+      }
+    };
+
+    loadPreUploadedAssets();
+  }, []);
+
   // Connect to real TikTok Live via relay server
   const handleConnectStream = (e: React.FormEvent) => {
     e.preventDefault();
