@@ -13,6 +13,7 @@ interface BattleArena3DProps {
   onWinnerDecided?: (winner: { username: string; color: string; kills: number }) => void;
   onBossMvpDecided?: (mvp: { username: string; damage: number }) => void;
   onKillEvent?: (data: { killer: string; victim: string; killerColor: string; streak: number; streakText: string }) => void;
+  onMusicAirdropTriggered?: () => void;
 }
 
 export interface BattleArenaRef {
@@ -37,7 +38,8 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
   onAddKillScore,
   onWinnerDecided,
   onBossMvpDecided,
-  onKillEvent
+  onKillEvent,
+  onMusicAirdropTriggered
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -72,6 +74,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
   const safeZoneDirectionRef = useRef<number>(-1); // -1 = shrinking, +1 = expanding
   const safeZoneRingMeshRef = useRef<THREE.LineLoop | null>(null);
   const safeZonePulseMeshRef = useRef<THREE.Mesh | null>(null);
+  const airdropSpawnTimerRef = useRef<number>(0);
   const arenaFloorMeshRef = useRef<THREE.Mesh | null>(null);
   const gridHelperRef = useRef<THREE.GridHelper | null>(null);
   const airdropMeshesRef = useRef<Map<string, THREE.Group>>(new Map());
@@ -227,8 +230,11 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     currentWeatherRef.current = weather;
     
     // 1. Reset lighting intensities
-    if (ambientLightRef.current) ambientLightRef.current.intensity = 1.5;
-    if (dirLightRef.current) dirLightRef.current.intensity = 2.5;
+    if (ambientLightRef.current) {
+      ambientLightRef.current.intensity = 2.0;
+      ambientLightRef.current.color.setHex(0xffffff);
+    }
+    if (dirLightRef.current) dirLightRef.current.intensity = 4.0;
     if (spotlightRef.current) spotlightRef.current.intensity = 5;
     
     // 2. Toggle visuals
@@ -1010,7 +1016,25 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
 
       const p = playersRef.current.get(id);
       if (p && p.status === 'alive') {
-        p.lastActionText = text.substring(0, 30);
+        // Clean bracketed TikTok emojis (e.g. [wow] -> 😲)
+        let cleanedText = text
+          .replace(/\[wow\]/gi, '😲')
+          .replace(/\[love\]/gi, '❤️')
+          .replace(/\[smile\]/gi, '😊')
+          .replace(/\[laugh\]/gi, '😂')
+          .replace(/\[cry\]/gi, '😢')
+          .replace(/\[angry\]/gi, '😠')
+          .replace(/\[surprised\]/gi, '😮')
+          .replace(/\[blink\]/gi, '😉')
+          .replace(/\[kira\]/gi, '✨')
+          .replace(/\[funny\]/gi, '🤣')
+          .replace(/\[wrong\]/gi, '❌')
+          .replace(/\[correct\]/gi, '✅')
+          .replace(/\[rose\]/gi, '🌹')
+          .replace(/\[heart\]/gi, '❤️')
+          .replace(/\[.*?\]/g, ''); // Remove any other unknown bracketed tags
+
+        p.lastActionText = cleanedText.trim().substring(0, 30) || text.substring(0, 30);
         p.lastActionTime = Date.now();
 
         const cmdText = text.toLowerCase().trim();
@@ -1208,13 +1232,13 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
 
       // --- SYSTEMATIC AIRDROP DROP BASED ON ACCUMULATED LIKES ---
       likeCounterRef.current += 1;
-      const LIKES_MILESTONE = 30; // drop a crate every 30 likes
+      const LIKES_MILESTONE = 10; // drop a crate every 10 likes (updated from 30)
       if (likeCounterRef.current >= LIKES_MILESTONE) {
         likeCounterRef.current = 0; // reset counter
         spawnRandomAirdrop();
         
         // Broadcast a floating indicator in the middle of the arena
-        addFloatingCombatText(`🎁 AIRDROP JATUH (30 LIKES)!`, 0, 4, 0, '#F59E0B');
+        addFloatingCombatText(`🎁 AIRDROP JATUH (10 LIKES)!`, 0, 4, 0, '#F59E0B');
       }
     },
 
@@ -1893,7 +1917,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
   };
 
   // Spawn Obstacles
-  const spawnObstacleAt = (x: number, z: number) => {
+  const spawnObstacleAt = (x: number, z: number, isFalling = false) => {
     if (!mainSceneRef.current) return;
 
     // Randomize glowing crystal color palette (Vibrant neon colors)
@@ -1907,6 +1931,15 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       0x06B6D4  // Cyan
     ];
     const chosenColor = obstacleColors[Math.floor(Math.random() * obstacleColors.length)];
+    
+    // HP Based on color (Merah paling kuat) - Starting from 1000 with random variance
+    let baseHp = 1000;
+    if (chosenColor === 0xEF4444) baseHp = 2500;
+    else if (chosenColor === 0xF59E0B) baseHp = 1800;
+    else if (chosenColor === 0x8B5CF6 || chosenColor === 0xEC4899) baseHp = 1500;
+    
+    // Tambahkan variasi acak +/- 20% agar HP tidak kaku
+    const hp = Math.floor(baseHp * (0.8 + Math.random() * 0.4));
 
     let obs: THREE.Object3D;
 
@@ -1925,8 +1958,9 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       // Randomize rotation
       customObs.rotation.y = Math.random() * Math.PI * 2;
       
-      // Position Y aligned to sit on ground
-      customObs.position.set(x, 0.1, z);
+      // Position Y aligned to sit on ground or falling from sky
+      const startY = isFalling ? 25 : 0.1;
+      customObs.position.set(x, startY, z);
       
       customObs.traverse((child) => {
         if ((child as THREE.Mesh).isMesh) {
@@ -1957,11 +1991,21 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
         metalness: 0.8
       });
       const fallbackMesh = new THREE.Mesh(geo, mat);
-      fallbackMesh.position.set(x, height / 2, z);
+      const startY = isFalling ? 25 : height / 2;
+      fallbackMesh.position.set(x, startY, z);
       fallbackMesh.castShadow = true;
       fallbackMesh.receiveShadow = true;
       obs = fallbackMesh;
     }
+    
+    // Store metadata
+    obs.userData = { 
+      hp: hp, 
+      maxHp: hp, 
+      isFalling: isFalling, 
+      color: chosenColor,
+      baseY: useCustom ? 0.1 : (obs as any).geometry?.parameters?.height / 2 || 2
+    };
 
     mainSceneRef.current.add(obs);
     obstaclesRef.current.push(obs);
@@ -1975,8 +2019,8 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     const x = Math.cos(ang) * dist;
     const z = Math.sin(ang) * dist;
 
-    // Support 6 different airdrop types (standard crates, bomb prank, gold crate, and special orb skill)
-    const types: AirdropType[] = ['health_crate', 'shield_crate', 'weapon_crate', 'bomb_prank', 'gold_crate', 'orbital_orbs'];
+    // Support 7 different airdrop types
+    const types: AirdropType[] = ['health_crate', 'shield_crate', 'weapon_crate', 'bomb_prank', 'gold_crate', 'orbital_orbs', 'music_crate'];
     const chosenType = types[Math.floor(Math.random() * types.length)];
 
     const id = Math.random().toString();
@@ -2027,6 +2071,10 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       boxColorStr = '#a855f7'; // Purple for Orb Crate
       boxColor = 0xa855f7;
       letter = 'O'; // O for Orb
+    } else if (chosenType === 'music_crate') {
+      boxColorStr = '#ec4899'; // Pink for Music Crate
+      boxColor = 0xec4899;
+      letter = '♫'; // Music Note
     }
     
     // Background fill
@@ -2115,6 +2163,9 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     } else if (chosenType === 'orbital_orbs') {
       labelText = '🔮 ORB SKILL';
       labelColor = '#a855f7';
+    } else if (chosenType === 'music_crate') {
+      labelText = '🎵 MUSIC BOX';
+      labelColor = '#ec4899';
     }
     // Background pill
     ctx2d.clearRect(0, 0, 256, 80);
@@ -2146,7 +2197,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     mainSceneRef.current.add(group);
     airdropMeshesRef.current.set(id, group);
 
-    let feedText = `Airdrop ${chosenType === 'health_crate' ? 'Heal' : chosenType === 'shield_crate' ? 'Shield' : chosenType === 'orbital_orbs' ? 'Orb Skill' : 'Weapon'} jatuh dari langit! 🎁`;
+    let feedText = `Airdrop ${chosenType === 'health_crate' ? 'Heal' : chosenType === 'shield_crate' ? 'Shield' : chosenType === 'orbital_orbs' ? 'Orb Skill' : chosenType === 'music_crate' ? 'Music Box' : 'Weapon'} jatuh dari langit! 🎁`;
     if (chosenType === 'bomb_prank') feedText = `Airdrop Misterius jatuh dari langit! 📦`;
     if (chosenType === 'gold_crate') feedText = `Airdrop Emas Jackpot jatuh dari langit! ⭐`;
 
@@ -2156,6 +2207,72 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       text: feedText,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     });
+  };
+
+  const triggerStoneRain = () => {
+    if (!mainSceneRef.current) return;
+    
+    onLiveFeedMessage({
+      id: Math.random().toString(),
+      type: 'system',
+      text: '☄️ PERINGATAN: HUJAN BATU AKAN TURUN!',
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    });
+
+    const players = Array.from(playersRef.current.values()) as Player[];
+    const alivePlayers = players.filter(p => p.status === 'alive');
+    
+    // Trigger 1-5 stones per minute (random amount, max 5)
+    const count = 1 + Math.floor(Math.random() * 5);
+    const spawnedPositions: {x: number, z: number}[] = [];
+    const minStoneDist = 8; // Minimal 8 units distance between falling stones
+
+    for (let i = 0; i < count; i++) {
+      let tx = 0, tz = 0;
+      let validPos = false;
+      let attempts = 0;
+
+      while (!validPos && attempts < 15) {
+        attempts++;
+        const rand = Math.random();
+        
+        if (alivePlayers.length > 0) {
+          if (rand < 0.3) {
+            // Random position
+            tx = (Math.random() - 0.5) * 65;
+            tz = (Math.random() - 0.5) * 65;
+          } else if (rand < 0.65) {
+            // Target low HP player (pick from bottom 3)
+            const sorted = [...alivePlayers].sort((a, b) => a.hp - b.hp);
+            const target = sorted[Math.floor(Math.random() * Math.min(3, sorted.length))];
+            tx = target.x + (Math.random() - 0.5) * 6;
+            tz = target.z + (Math.random() - 0.5) * 6;
+          } else {
+            // Target high XP player (pick from top 3)
+            const sorted = [...alivePlayers].sort((a, b) => b.xp - a.xp);
+            const target = sorted[Math.floor(Math.random() * Math.min(3, sorted.length))];
+            tx = target.x + (Math.random() - 0.5) * 6;
+            tz = target.z + (Math.random() - 0.5) * 6;
+          }
+        } else {
+          tx = (Math.random() - 0.5) * 55;
+          tz = (Math.random() - 0.5) * 55;
+        }
+
+        // Ensure minimum distance from other stones in this batch
+        validPos = spawnedPositions.every(pos => {
+          const d = Math.sqrt(Math.pow(pos.x - tx, 2) + Math.pow(pos.z - tz, 2));
+          return d >= minStoneDist;
+        });
+      }
+
+      if (validPos || i === 0) {
+        spawnedPositions.push({x: tx, z: tz});
+        setTimeout(() => {
+          spawnObstacleAt(tx, tz, true);
+        }, i * 500);
+      }
+    }
   };
 
   // Particle Generation
@@ -2354,7 +2471,8 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
   // ===== DRAMATIC COLLISION HELPERS =====
   /** Trigger camera shake with given intensity */
   const triggerScreenShake = (intensity: number) => {
-    cameraShakeRef.current.intensity = Math.max(cameraShakeRef.current.intensity, intensity * 0.5);
+    // Highly minimized multiplier from 0.3 to 0.1
+    cameraShakeRef.current.intensity = Math.max(cameraShakeRef.current.intensity, intensity * 0.1);
   };
 
   /** Create a shockwave ring (visual AOE indicator) */
@@ -2599,7 +2717,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
         // Attacker also recoils slightly
         applyKnockback(attacker, target.x, target.z, knockbackForce * 0.35);
         // Camera shake proportional to damage
-        triggerScreenShake(Math.min(5, 1 + damage * 0.06));
+        triggerScreenShake(Math.min(1.5, 0.5 + damage * 0.04));
         // Impact spark burst
         const midX = (target.x + attacker.x) / 2;
         const midZ = (target.z + attacker.z) / 2;
@@ -2634,7 +2752,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       }, 400);
       
       // 4. Intense camera shake
-      triggerScreenShake(8);
+      triggerScreenShake(2);
       
       // 5. Giant "ELIMINATED!" floating text at death location
       addFloatingCombatText('💀 ELIMINATED!', target.x, target.y + 3, target.z, '#EF4444');
@@ -2782,11 +2900,11 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     mainRendererRef.current = renderer;
 
     // 4. Lights
-    const ambientLight = new THREE.AmbientLight(0x0c1122, 1.5);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); // Diubah jadi lebih terang (putih dengan intensitas 2.0)
     scene.add(ambientLight);
     ambientLightRef.current = ambientLight;
 
-    const dirLight = new THREE.DirectionalLight(0x8B5CF6, 2.5);
+    const dirLight = new THREE.DirectionalLight(0x8B5CF6, 4.0); // Diterangkan intensitasnya menjadi 4.0
     dirLight.position.set(15, 30, 10);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 1024;
@@ -2978,7 +3096,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
         }, 100 + Math.random() * 200);
       }
       // Damage + shake
-      triggerScreenShake(8);
+      triggerScreenShake(2);
       players.forEach((target: any) => {
         if (target.status === 'dead') return;
         const dx = target.x - boss.x;
@@ -3212,9 +3330,9 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       }
 
       // Oscillate safe zone between 10 and 200
-      const SAFE_ZONE_MIN = 20;
-      const SAFE_ZONE_MAX = 110;
-      const safeZoneSpeed = 0.4; // units per second
+      const SAFE_ZONE_MIN = 10;
+      const SAFE_ZONE_MAX = 40;
+      const safeZoneSpeed = 0.01; // units per second (sedang)
       safeZoneRadiusRef.current += safeZoneDirectionRef.current * safeZoneSpeed * delta;
       if (safeZoneRadiusRef.current <= SAFE_ZONE_MIN) {
         safeZoneRadiusRef.current = SAFE_ZONE_MIN;
@@ -3400,6 +3518,26 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
         }
       }
 
+      // Dynamic Airdrop Spawn Logic (Affected by Safe Zone)
+      airdropSpawnTimerRef.current += delta;
+      const currentRadius = safeZoneRadiusRef.current;
+      const radiusPercent = (currentRadius - 10) / 100; // 0 (min 10) to 1 (max 110)
+      
+      // Semakin besar Safe Zone (radiusPercent -> 1), semakin cepat intervalnya
+      // Interval: 4 detik (saat radius max) sampai 15 detik (saat radius min)
+      const dynamicSpawnInterval = 15 - (radiusPercent * 11);
+      
+      // Semakin besar Safe Zone, semakin banyak jumlah airdrop maksimal di arena
+      // Max Cap: 2 (saat min) sampai 8 (saat max)
+      const dynamicMaxAirdrops = Math.floor(2 + radiusPercent * 6);
+
+      if (airdropSpawnTimerRef.current >= dynamicSpawnInterval) {
+        airdropSpawnTimerRef.current = 0;
+        if (playersRef.current.size > 0 && airdropsRef.current.length < dynamicMaxAirdrops) {
+          spawnRandomAirdrop();
+        }
+      }
+
       // Sync Airdrops falling
       airdropsRef.current.forEach((ad) => {
         if (ad.y > 0.5) {
@@ -3413,6 +3551,52 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
           }
         }
       });
+
+      // 🧊 Update Obstacles (Falling & HP management)
+      for (let oi = obstaclesRef.current.length - 1; oi >= 0; oi--) {
+        const obs = obstaclesRef.current[oi];
+        const data = obs.userData;
+        if (!data) continue;
+        
+        // Handle falling
+        if (data.isFalling && obs.position.y > data.baseY) {
+          obs.position.y -= delta * 15; // fall speed
+          if (obs.position.y <= data.baseY) {
+            obs.position.y = data.baseY;
+            data.isFalling = false;
+            // Impact effect when hitting ground
+            createSpawnExplosion(obs.position.x, 0.1, obs.position.z, data.color || '#ffffff', 8);
+          }
+        }
+        
+        // Handle destruction if HP is empty
+        if (data.hp !== undefined && data.hp <= 0) {
+          createImpactExplosion(obs.position.x, obs.position.z, data.color || '#ffffff', '#ffffff', 1.2);
+          scene.remove(obs);
+          obstaclesRef.current.splice(oi, 1);
+        } else if (data.hp !== undefined && data.maxHp !== undefined) {
+          // Dynamic color shifting based on HP percentage
+          const hpPercent = (data.hp / data.maxHp) * 100;
+          let newColor = 0x06B6D4; // Cyan (<= 20%)
+          if (hpPercent > 80) newColor = 0xEF4444; // Red
+          else if (hpPercent > 60) newColor = 0xF59E0B; // Gold
+          else if (hpPercent > 40) newColor = 0x8B5CF6; // Purple
+          else if (hpPercent > 20) newColor = 0x3B82F6; // Blue
+
+          if (data.color !== newColor) {
+            data.color = newColor;
+            obs.traverse((child) => {
+              if ((child as THREE.Mesh).isMesh) {
+                const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
+                if (mat) {
+                  mat.color.setHex(newColor);
+                  mat.emissive.setHex(newColor);
+                }
+              }
+            });
+          }
+        }
+      }
 
       // Build player list for boss/minion processing
       const listPlayers = Array.from(playersRef.current.values()) as Player[];
@@ -3967,8 +4151,8 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
               bestTargetZ = ad.z;
               foundMission = true;
 
-              // If close enough, claim it!
-              if (closeAdDist < 1.8) {
+              // If close enough AND near ground, claim it!
+              if (closeAdDist < 1.8 && ad.y < 0.8) {
                 awardPlayerXp(p, 80); // Award XP for getting the drop
                 if (ad.type === 'health_crate') {
                   p.hp = Math.min(p.maxHp, p.hp + 50);
@@ -4012,6 +4196,12 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
                   // Gold particle burst
                   createSpawnExplosion(p.x, p.y, p.z, '#eab308', 18);
                   addFloatingCombatText('⭐ GOLD JACKPOT! (+100 Poin)', p.x, p.y + 1.5, p.z, '#eab308');
+                } else if (ad.type === 'music_crate') {
+                  // Music Crate -> Trigger onMusicAirdropTriggered to send webspy request
+                  awardPlayerXp(p, 100);
+                  createSpawnExplosion(p.x, p.y, p.z, '#ec4899', 18);
+                  addFloatingCombatText('🎵 MUSIC REQUESTED!', p.x, p.y + 1.5, p.z, '#ec4899');
+                  if (onMusicAirdropTriggered) onMusicAirdropTriggered();
                 } else {
                   // weapon update
                   const weapons: WeaponType[] = ['sword', 'glowing_laser', 'battle_hammer', 'golden_lance'];
@@ -4213,8 +4403,23 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
             if (!(p as any)[throttleKey] || (now - (p as any)[throttleKey] > 1000)) {
               (p as any)[throttleKey] = now;
               damagePlayer(p, 5, 'OBSTACLE');
+              
+              // Reduce Obstacle HP
+              if (obs.userData && obs.userData.hp !== undefined) {
+                const hasOrbitalOrbs = p.activePowerUps?.some(pu => pu.type === 'orbital_orbs');
+                if (hasOrbitalOrbs) {
+                  obs.userData.hp = 0; // Instant destroy by Orb Shield
+                } else {
+                  const pPower = p.size * (p.isGiga ? 2.5 : 1);
+                  const dmgToObs = Math.floor(25 * pPower);
+                  obs.userData.hp -= dmgToObs;
+                }
+                
+                // Visual feedback for obstacle hit
+                createSpawnExplosion(obs.position.x, obs.position.y + 0.5, obs.position.z, obs.userData.color || '#ffffff', 5);
+              }
+
               createSpawnExplosion(p.x, p.y + 0.3, p.z, '#ef4444', 6);
-              addFloatingCombatText('💥 TABRAK BATU! (-5 HP)', p.x, p.y + 1.2, p.z, '#ef4444');
             }
           }
         });
@@ -4333,7 +4538,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
                 createImpactExplosion(midX, midZ, p.color, other.color, 2.0);
                 createGlassShatter(midX, midZ, p.color, '#FFD700', 14);
                 createGlassShatter(midX, midZ, other.color, '#FFFFFF', 8);
-                triggerScreenShake(8);
+                triggerScreenShake(2);
 
                 // Special parry sound
                 playParryClashSound();
@@ -4385,7 +4590,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
                 }
                 // Normal collision effects
                 createImpactExplosion(midX, midZ, p.color, other.color, Math.min(1.2, 0.3 + overlap * 2));
-                triggerScreenShake(Math.min(4, 1 + overlap * 3));
+                triggerScreenShake(Math.min(2.5, 0.5 + overlap * 2));
 
                 // Collision sound based on impact speed (not just size)
                 if (relativeSpeed < 1.5) playClashLightSound();
@@ -4419,8 +4624,8 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
           const isBehindCamera = pos.z > 1.0;
 
           if (!isBehindCamera) {
-            // Check if comment message bubble is still active (display comments for 3.5s inline)
-            const showBubble = p.lastActionText && p.lastActionTime && (Date.now() - p.lastActionTime < 3500);
+            // Check if comment message bubble is still active (display comments for 30s inline)
+            const showBubble = p.lastActionText && p.lastActionTime && (Date.now() - p.lastActionTime < 30000);
 
             curLabels.push({
               id: p.id,
@@ -4468,11 +4673,12 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
         const camTargetY = 30 + Math.min(15, survivors.length * 0.5);
         // Apply screen shake offset
         const shake = cameraShakeRef.current;
-        if (shake.intensity > 0.1) {
+        if (shake.intensity > 0.02) {
           shake.offsetX = (Math.random() - 0.5) * shake.intensity;
           shake.offsetZ = (Math.random() - 0.5) * shake.intensity;
-          shake.intensity *= shake.decay;
-          if (shake.intensity < 0.1) {
+          // Even faster decay from 0.85 to 0.75 for minimalist feel
+          shake.intensity *= 0.75; 
+          if (shake.intensity < 0.02) {
             shake.intensity = 0;
             shake.offsetX = 0;
             shake.offsetZ = 0;
@@ -4491,12 +4697,24 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
 
     animeFrameId = requestAnimationFrame(animate);
 
-    // Initial load airdrop drop timer
-    const dropTimer = setInterval(() => {
-      if (playersRef.current.size > 0 && airdropsRef.current.length < 3) {
-        spawnRandomAirdrop();
+    // Stone Rain timer - every 60 seconds (1 minute)
+    const stoneRainTimer = setInterval(() => {
+      triggerStoneRain();
+    }, 60000);
+
+    // Auto-spawn Bot Maintainer - every 60 seconds
+    const botMaintainerTimer = setInterval(() => {
+      const alivePlayers = (Array.from(playersRef.current.values()) as Player[]).filter(p => p.status === 'alive');
+      if (alivePlayers.length < 10) {
+        const needed = 10 - alivePlayers.length;
+        console.log(`[Arena] Populasi rendah (${alivePlayers.length}/10), spawning ${needed} bot tambahan.`);
+        for (let i = 0; i < needed; i++) {
+          setTimeout(() => {
+            spawnSingleNpcBot();
+          }, i * 1500); // Stagger spawn slightly
+        }
       }
-    }, 12000);
+    }, 60000);
 
     // Auto update top list leaderboard in side panel
     const lbdTimer = setInterval(() => {
@@ -4536,7 +4754,8 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     // Cleanup Resources on unmount
     return () => {
       cancelAnimationFrame(animeFrameId);
-      clearInterval(dropTimer);
+      clearInterval(stoneRainTimer);
+      clearInterval(botMaintainerTimer);
       clearInterval(lbdTimer);
       clearInterval(bossSpawnTimer);
       window.removeEventListener('resize', handleResize);

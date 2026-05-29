@@ -300,6 +300,7 @@ const wss = new WebSocketServer({ server });
 let currentYoutubeId: string | null = null;
 let currentYoutubeTitle: string | null = null;
 let jukeboxQueue: { videoId: string; title: string }[] = [];
+let jukeboxHistory: { videoId: string; title: string }[] = [];
 let isAutoplay = true;
 let isShuffle = false;
 let floorTheme = 'scifi';
@@ -313,6 +314,7 @@ function saveJukeboxState() {
       currentYoutubeId,
       currentYoutubeTitle,
       jukeboxQueue,
+      jukeboxHistory,
       isAutoplay,
       isShuffle,
       floorTheme,
@@ -332,6 +334,7 @@ function loadJukeboxState() {
       if (state.currentYoutubeId !== undefined) currentYoutubeId = state.currentYoutubeId;
       if (state.currentYoutubeTitle !== undefined) currentYoutubeTitle = state.currentYoutubeTitle;
       if (state.jukeboxQueue !== undefined) jukeboxQueue = state.jukeboxQueue;
+      if (state.jukeboxHistory !== undefined) jukeboxHistory = state.jukeboxHistory;
       if (state.isAutoplay !== undefined) isAutoplay = state.isAutoplay;
       if (state.isShuffle !== undefined) isShuffle = state.isShuffle;
       if (state.floorTheme !== undefined) floorTheme = state.floorTheme;
@@ -348,54 +351,67 @@ loadJukeboxState();
 
 let isAutoFilling = false;
 
-async function checkAndAutoFillQueue() {
-  if (currentYoutubeId && jukeboxQueue.length <= 1 && !isAutoFilling) {
-    isAutoFilling = true;
-    console.log(`[AutoFill] Queue has ${jukeboxQueue.length} song(s) remaining. Querying WebSpy for a hit song...`);
-    try {
-      const response = await fetch('http://localhost:3234/api/ask', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: 'Rekomendasi 1 judul lagu Indonesia hit secara acak/random yang populer saat ini. Cukup berikan format: Judul Lagu - Nama Penyanyi (tanpa teks penjelasan lain)'
-        })
-      });
+async function fetchWebspySong() {
+  if (isAutoFilling) return;
+  isAutoFilling = true;
+  console.log(`[WebSpy] Querying WebSpy for a hit song...`);
+  try {
+    const response = await fetch('https://webspy.nufat.id/api/ask', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: 'Rekomendasi 1 judul lagu Indonesia hit secara acak/random yang populer saat ini. Cukup berikan format: Judul Lagu - Nama Penyanyi (tanpa teks penjelasan lain)'
+      })
+    });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = (await response.json()) as any;
-      const rawSong = data.response || data.answer || data.message || '';
-      let cleanedSong = rawSong.trim();
-      const lines = cleanedSong.split('\n').map((l: string) => l.trim()).filter(Boolean);
-      if (lines.length > 0) {
-        cleanedSong = lines[0];
-      }
-      cleanedSong = cleanedSong.replace(/["'*]/g, '').trim();
-
-      if (cleanedSong) {
-        console.log(`[AutoFill] WebSpy returned: "${cleanedSong}". Searching YouTube...`);
-        const r = await yts(cleanedSong);
-        if (r.videos && r.videos.length > 0) {
-          const song = { videoId: r.videos[0].videoId, title: r.videos[0].title };
-          jukeboxQueue.push(song);
-          console.log(`[AutoFill] Added to queue: ${song.title}`);
-          broadcast({ type: 'update_queue', queue: jukeboxQueue });
-          saveJukeboxState();
-        } else {
-          console.warn(`[AutoFill] No YouTube search results for: "${cleanedSong}"`);
-        }
-      } else {
-        console.warn('[AutoFill] WebSpy returned an empty response');
-      }
-    } catch (err: any) {
-      console.error('[AutoFill] Failed to auto-fill queue:', err?.message || err);
-    } finally {
-      isAutoFilling = false;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
+
+    const data = (await response.json()) as any;
+    const rawSong = data.response || data.answer || data.message || '';
+    let cleanedSong = rawSong.trim();
+    const lines = cleanedSong.split('\n').map((l: string) => l.trim()).filter(Boolean);
+    if (lines.length > 0) {
+      cleanedSong = lines[0];
+    }
+    cleanedSong = cleanedSong.replace(/["'*]/g, '').trim();
+
+    if (cleanedSong) {
+      console.log(`[WebSpy] WebSpy returned: "${cleanedSong}". Searching YouTube...`);
+      const r = await yts(cleanedSong);
+      if (r.videos && r.videos.length > 0) {
+        const song = { videoId: r.videos[0].videoId, title: r.videos[0].title };
+        if (!currentYoutubeId) {
+          currentYoutubeId = song.videoId;
+          currentYoutubeTitle = song.title;
+          console.log(`[WebSpy] Playing first song: ${song.title}`);
+          broadcast({ type: 'play_youtube', videoId: song.videoId, title: song.title });
+        } else {
+          jukeboxQueue.push(song);
+          console.log(`[WebSpy] Added to queue: ${song.title}`);
+          broadcast({ type: 'update_queue', queue: jukeboxQueue });
+        }
+        saveJukeboxState();
+      } else {
+        console.warn(`[WebSpy] No YouTube search results for: "${cleanedSong}"`);
+      }
+    } else {
+      console.warn('[WebSpy] WebSpy returned an empty response');
+    }
+  } catch (err: any) {
+    console.error('[WebSpy] Failed to auto-fill queue:', err?.message || err);
+  } finally {
+    isAutoFilling = false;
+  }
+}
+
+async function checkAndAutoFillQueue() {
+  if (isAutoplay && jukeboxQueue.length <= 1) {
+    console.log(`[AutoFill] Queue has ${jukeboxQueue.length} song(s) remaining. Triggering WebSpy...`);
+    fetchWebspySong();
   }
 }
 
@@ -510,7 +526,7 @@ async function connectToTikTok(username: string) {
 
     // Jukebox auto-play/queue via chat comment
     const text = (msg.text || '').trim();
-    const match = text.match(/^(?:music|play|mainkan|putar)\s+(.+)/i);
+    const match = text.match(/^(?:music|play|mainkan|putar|request|next)\s+(.+)/i);
     if (match) {
       const query = match[1].trim();
       if (query) {
@@ -747,6 +763,11 @@ wss.on('connection', (ws: WebSocket) => {
         if (payload) {
           currentYoutubeId = payload.videoId;
           currentYoutubeTitle = payload.title;
+          // Simpan ke histori (maksimal 200 lagu), hindari duplikat berurutan
+          if (jukeboxHistory.length === 0 || jukeboxHistory[jukeboxHistory.length - 1].videoId !== payload.videoId) {
+            jukeboxHistory.push(payload);
+            if (jukeboxHistory.length > 200) jukeboxHistory.shift();
+          }
         } else {
           currentYoutubeId = null;
           currentYoutubeTitle = null;
@@ -756,6 +777,26 @@ wss.on('connection', (ws: WebSocket) => {
         broadcast({ type: 'update_queue', queue: jukeboxQueue });
         saveJukeboxState();
         checkAndAutoFillQueue();
+        break;
+      }
+
+      case 'play_random_history': {
+        if (jukeboxHistory.length > 0) {
+          const randomIndex = Math.floor(Math.random() * jukeboxHistory.length);
+          const song = jukeboxHistory[randomIndex];
+          currentYoutubeId = song.videoId;
+          currentYoutubeTitle = song.title;
+          broadcast({ type: 'play_youtube', videoId: currentYoutubeId, title: currentYoutubeTitle });
+          saveJukeboxState();
+          checkAndAutoFillQueue();
+        }
+        break;
+      }
+
+      case 'request_webspy_song': {
+        // Panggil webspy paksa walaupun antrean masih ada
+        isAutoFilling = false; // Reset lock just in case
+        fetchWebspySong();
         break;
       }
 

@@ -199,7 +199,7 @@ export default function App() {
     },
     onInitAssets: (assets) => {
       console.log('🔌 [Socket] Initializing persistent assets:', assets.length);
-      const relayHttpUrl = `http://${window.location.hostname}:3011`;
+      const relayHttpUrl = 'https://tikserver.nufat.id';
       setTimeout(() => {
         if (battleArenaRef.current) {
           battleArenaRef.current.clearAllImportedOBJs();
@@ -211,7 +211,7 @@ export default function App() {
     },
     onImportObj: (filename, url) => {
       console.log('🔌 [Socket] New OBJ import broadcast received:', filename);
-      const relayHttpUrl = `http://${window.location.hostname}:3011`;
+      const relayHttpUrl = 'https://tikserver.nufat.id';
       if (battleArenaRef.current) {
         battleArenaRef.current.importOBJFromUrl(`${relayHttpUrl}${url}`, filename);
       }
@@ -312,19 +312,29 @@ export default function App() {
 
   const playSimilarSong = (attempt = 1, initialVideoId = configRef.current.currentYoutubeId) => {
     const title = configRef.current.currentYoutubeTitle;
-    if (!title) return;
+    if (!title) {
+      sendSocketMessage({ type: 'play_random_history' });
+      return;
+    }
     const cleanTitle = title.replace(/\(Official.*?\)|\[Official.*?\]|official|video|audio|lyric|mv/gi, '').trim();
     fetch(`/api/youtube/search?q=${encodeURIComponent(cleanTitle + ' similar song')}&count=5`)
       .then(r => r.json())
       .then(data => {
-        if (!data.success || !data.results) return;
+        if (!data.success || !data.results || data.results.length === 0) {
+          sendSocketMessage({ type: 'play_random_history' });
+          return;
+        }
         const candidates = data.results.filter((v: any) => v.videoId !== initialVideoId);
         const best = candidates[Math.floor(Math.random() * candidates.length)] || data.results[0];
         if (best) {
           sendSocketMessage({ type: 'play_youtube', payload: { videoId: best.videoId, title: best.title } });
+        } else {
+          sendSocketMessage({ type: 'play_random_history' });
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        sendSocketMessage({ type: 'play_random_history' });
+      });
   };
 
   // Initialize YouTube Jukebox Player
@@ -367,7 +377,7 @@ export default function App() {
   // Load custom pre-uploaded assets from /assets/airdrop and /assets/object directories
   useEffect(() => {
     const loadPreUploadedAssets = async () => {
-      const relayHttpUrl = `http://${window.location.hostname}:3011`;
+      const relayHttpUrl = 'https://tikserver.nufat.id';
       try {
         const response = await fetch(`${relayHttpUrl}/api/custom-assets`);
         const data = await response.json();
@@ -527,7 +537,7 @@ export default function App() {
 
   const handleClearMap = () => {
     if (confirm('Aa Baim yakin ingin menghapus semua bangunan & dekorasi 3D dari arena?')) {
-      const relayHttpUrl = `http://${window.location.hostname}:3011`;
+      const relayHttpUrl = 'https://tikserver.nufat.id';
       fetch(`${relayHttpUrl}/api/clear-objs`, { method: 'POST' })
         .then(r => r.json())
         .then(res => {
@@ -630,7 +640,7 @@ export default function App() {
             reader.onload = (event) => {
               const textContent = event.target?.result as string;
               if (textContent) {
-                const relayHttpUrl = `http://${window.location.hostname}:3011`;
+                const relayHttpUrl = 'https://tikserver.nufat.id';
                 fetch(`${relayHttpUrl}/api/upload-obj`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -672,7 +682,7 @@ export default function App() {
             reader.onload = (event) => {
               const base64Content = event.target?.result as string;
               if (base64Content) {
-                const relayHttpUrl = `http://${window.location.hostname}:3011`;
+                const relayHttpUrl = 'https://tikserver.nufat.id';
                 fetch(`${relayHttpUrl}/api/upload-texture`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -716,6 +726,7 @@ export default function App() {
           onAddKillScore={handleKillScore}
           onWinnerDecided={addMatchWinner}
           onBossMvpDecided={handleBossMvp}
+          onMusicAirdropTriggered={() => sendSocketMessage({ type: 'request_webspy_song' })}
         />
       </div>
 
@@ -786,7 +797,7 @@ export default function App() {
                   <div className="flex items-center gap-1.5 px-2 py-0.5 bg-cyan-950/40 border border-cyan-800/30 rounded-full text-[10px] text-cyan-300 font-bold select-none">
                     <span>Auto:</span>
                     <a
-                      href="javascript:(function(){const m=document.cookie.match(/sessionid=([^;]+)/);if(!m){alert('Aduh aa Baim, pastikan sudah login ke tiktok.com dulu ya!');return;}const s=m[1];navigator.clipboard.writeText(s).then(()=>{console.log('Session ID copied to clipboard');}).catch(()=>{});fetch('http://localhost:3011/api/set-session-id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:s})}).then(r=>r.json()).then(d=>{alert('✅ Berhasil! Session ID otomatis terkirim & disalin ke clipboard aa Baim.');}).catch(err=>{alert('⚠️ Session ID disalin ke clipboard! Silakan paste langsung di dashboard.');});})()"
+                      href="javascript:(function(){const m=document.cookie.match(/sessionid=([^;]+)/);if(!m){alert('Aduh aa Baim, pastikan sudah login ke tiktok.com dulu ya!');return;}const s=m[1];navigator.clipboard.writeText(s).then(()=>{console.log('Session ID copied to clipboard');}).catch(()=>{});fetch('https://tikserver.nufat.id/api/set-session-id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:s})}).then(r=>r.json()).then(d=>{alert('✅ Berhasil! Session ID otomatis terkirim & disalin ke clipboard aa Baim.');}).catch(err=>{alert('⚠️ Session ID disalin ke clipboard! Silakan paste langsung di dashboard.');});})()"
                       className="bg-cyan-900/60 hover:bg-cyan-800 hover:text-white px-2 py-0.5 rounded transition-all cursor-pointer shadow-sm border border-cyan-700/40 text-cyan-200"
                       title="Seret tombol ini ke bookmarks bar browser. Buka tiktok.com, klik bookmark ini untuk mendapatkan Session ID otomatis."
                       onClick={(e) => {
@@ -897,7 +908,7 @@ export default function App() {
                 type="button"
                 onClick={() => {
                   if (confirm('Aa Baim yakin ingin menghapus semua bangunan & dekorasi 3D dari arena?')) {
-                    const relayHttpUrl = `http://${window.location.hostname}:3011`;
+                    const relayHttpUrl = 'https://tikserver.nufat.id';
                     fetch(`${relayHttpUrl}/api/clear-objs`, { method: 'POST' })
                       .then(r => r.json())
                       .then(res => {

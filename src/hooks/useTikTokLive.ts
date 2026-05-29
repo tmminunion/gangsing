@@ -53,7 +53,7 @@ export interface TikTokLiveOptions {
 
 export function useTikTokLive(options: TikTokLiveOptions = {}) {
   const {
-    serverUrl = `ws://${window.location.hostname}:3011`,
+    serverUrl = 'wss://tikserver.nufat.id',
     onChat,
     onGift,
     onMember,

@@ -20,9 +20,10 @@ Penonton bisa mengendalikan cuaca dan hukum fisika di dalam arena secara real-ti
 * **`malam`**: Arena menjadi gelap gulita, menyalakan pendar lampu neon (*glow-in-the-dark*) warna-warni pada setiap gangsing. Sangat estetik!
 * **`normal`**: Mengembalikan cuaca menjadi cerah dan fisika lantai kembali normal.
 
-### 3. 🏃 Gerakan Tambahan (`lompat` / `jump`)
-* **Cara Menggunakan**: Ketik `lompat` atau `jump` di chat.
-* **Efek Game**: Gangsingmu akan melompat tinggi ke udara untuk menghindari tabrakan atau keluar dari jebakan arena!
+### 4. 🎵 Interaktif Jukebox & Pemutar Musik (`music` / `play` / `request` / `next`)
+* **Cara Menggunakan**: Ketik `music [judul]`, `play [judul]`, `request [judul]`, atau `next [judul]` di chat.
+* **Efek Game**: Lagu tersebut akan langsung dicari dari YouTube dan ditambahkan ke dalam **antrean Jukebox**.
+* **Fitur Cerdas (WebSpy AutoFill)**: Jika antrean lagu kosong, sistem akan memanggil AI WebSpy secara otomatis untuk merekomendasikan dan memutar lagu yang sedang viral saat ini. Jika antrean benar-benar habis, sistem akan memutar lagu secara acak dari riwayat (hingga 200 lagu terakhir) untuk memastikan musik **tidak pernah putus**!
 
 ---
 
@@ -47,6 +48,8 @@ Setiap tap layar atau Like yang masuk dari penonton:
   * **⚔️ WEAPON (Kotak W)**: Memberikan senjata acak yang kuat (Laser, Tombak Emas, Palu, dll).
   * **⭐ GOLD JACKPOT (Kotak G)**: Memberikan tambahan +150 XP dan +100 Poin skor instan!
   * **💥 BOMB PRANK (Kotak B)**: Prank zonk! Meledak saat disentuh, mengurangi HP pemain sebanyak -30 HP, dan mementalkannya ke belakang dengan kencang!
+  * **🔮 ORB SKILL (Kotak O)**: Memberikan power-up berupa pusaran orb pertahanan di sekitar pemain selama 15 detik!
+  * **🎵 MUSIC BOX (Kotak ♫ Warna Pink)**: Mendapatkan +100 XP instan! Saat tersentuh, akan langsung men-trigger bot WebSpy untuk mencarikan satu lagu hit acak dan langsung memutarnya secara otomatis.
 
 ---
 
@@ -55,6 +58,13 @@ Setiap tap layar atau Like yang masuk dari penonton:
 Dashboard pengontrol `/dash` memiliki fitur canggih untuk mengubah gaya arena secara instan:
 * **Tema Lantai Bawaan**: Pilih tema instan seperti **Sci-Fi, Rumput, Pasir, Bata, Batu, Lava, Es, dan Kayu**.
 * **Upload Tekstur Custom**: Klik tombol **Upload Tekstur Lantai Custom** untuk mengunggah gambar buatanmu sendiri (rumput realis, foto, dll) dan sistem akan otomatis mengaplikasikannya ke seluruh layar penonton secara real-time!
+
+---
+
+## 🎨 Visual dan Gameplay Tingkat Lanjut
+
+* **Pencahayaan Cerah**: Arena diterangi dengan *Ambient Light* (2.0) berwarna putih bersih dan *Directional Light* kuat (4.0) membuat warna-warna neon 3D lebih hidup.
+* **Safe Zone Berjalan Sangat Lambat**: Cincin *Safe Zone* sekarang disetel batas mengecilnya dan membesarnya maksimal di radius 40. Kecepatannya diperlambat hingga `0.001` per detik sehingga terkesan damai namun tetap dinamis membatasi arena permainan.
 
 ---
 

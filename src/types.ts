@@ -48,7 +48,7 @@ export type WeaponType = 'fist' | 'sword' | 'glowing_laser' | 'battle_hammer' | 
 /** Types of enhanced power-up airdrops */
 export type PowerUpType = 'speed_boost' | 'invincible_shield' | 'fire_aura' | 'nuke' | 'vampire_lifesteal' | 'orbital_orbs';
 
-export type AirdropType = 'health_crate' | 'shield_crate' | 'weapon_crate' | 'bomb_prank' | 'gold_crate' | PowerUpType;
+export type AirdropType = 'health_crate' | 'shield_crate' | 'weapon_crate' | 'bomb_prank' | 'gold_crate' | 'music_crate' | PowerUpType;
 
 /** An active timed power-up on a player */
 export interface ActivePowerUp {
