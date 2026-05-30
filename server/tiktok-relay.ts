@@ -306,6 +306,7 @@ let isAutoplay = true;
 let isShuffle = false;
 let floorTheme = 'scifi';
 let activeSessionId: string | null = null;
+let activeViewers = new Map<string, { handle: string, nickname: string }>();
 
 const STATE_FILE = path.join(process.cwd(), 'server', 'jukebox_state.json');
 
@@ -857,6 +858,7 @@ wss.on('connection', (ws: WebSocket) => {
     hasSessionId: !!activeSessionId,
     youtubeConnected: isYoutubeConnected,
     youtubeChannelId: currentYoutubeChannelId,
+    activeViewers: Array.from(activeViewers.values()),
   }));
 
   // Send current Jukebox state

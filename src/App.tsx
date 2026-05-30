@@ -152,13 +152,21 @@ export default function App() {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       });
     },
-    onConnectionChange: (connected, username) => {
+    onConnectionChange: (connected, username, activeViewers) => {
       setIsConnected(connected);
       setConnecting(false);
       if (connected && username) {
         localStorage.setItem('tiktok_last_username', username);
         if (tiktokSessionId) {
           localStorage.setItem('tiktok_last_session_id', tiktokSessionId);
+        }
+
+        // AUTO-RESTORE: Spawn existing viewers if the list is provided (on restart/refresh)
+        if (activeViewers && activeViewers.length > 0 && battleArenaRef.current) {
+          console.log(`🚀 [AutoRestore] Spawning ${activeViewers.length} active viewers...`);
+          activeViewers.forEach(v => {
+            battleArenaRef.current?.addPlayer(v.handle, v.nickname, false);
+          });
         }
       }
     },
@@ -500,11 +508,13 @@ export default function App() {
     // Trigger minimal popup for spawn (join) & eliminated (kill)
     if (newEntry.type === 'join' || newEntry.type === 'kill') {
       const notif = { id: newEntry.id, text: newEntry.text, type: newEntry.type };
-      setTopNotifications(prev => [notif, ...prev].slice(0, 5));
-      // Auto-dismiss after 3.5s
+      // Show only ONE latest notification for 20 seconds (one bar style)
+      setTopNotifications([notif]);
+      
+      // Auto-dismiss after 20s
       setTimeout(() => {
-        setTopNotifications(prev => prev.filter(n => n.id !== notif.id));
-      }, 3500);
+        setTopNotifications(prev => prev.filter(n => n.id === notif.id ? false : true));
+      }, 20000);
     }
   };
 
@@ -1056,17 +1066,37 @@ export default function App() {
           ========================================================================= */}
       {!isDashRoute && (
         <div className="absolute inset-0 z-30 pointer-events-none select-none overflow-hidden">
+          {/* FULL-WIDTH BOTTOM NOTIFICATION BAR — spawn & eliminated */}
           {topNotifications.length > 0 && (
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-40 flex flex-col-reverse gap-2 items-center pointer-events-none select-none">
-              <style>{` @keyframes notifSlideUp { 0% { transform: translateY(40px) scale(0.9); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } } .notif-enter { animation: notifSlideUp 0.3s ease-out forwards; } `}</style>
-              {topNotifications.map((notif) => (
-                <div key={notif.id} className="notif-enter w-[280px] backdrop-blur-md rounded-2xl px-5 py-3 shadow-2xl border border-white/10" style={{ background: "rgba(0, 0, 0, 0.75)" }}>
-                  <div className="flex items-center gap-3">
-                    <div className={`p-1.5 rounded-lg ${notif.type === "join" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}>{notif.type === "join" ? "📢" : "💀"}</div>
-                    <span className={`text-[11px] font-black leading-tight tracking-tight drop-shadow-sm ${notif.type === "join" ? "text-emerald-400" : "text-red-400"}`}>{notif.text}</span>
+            <div className="absolute bottom-0 left-0 right-0 z-50 pointer-events-none select-none">
+              <style>{`
+                @keyframes barSlideUp {
+                  0% { transform: translateY(100%); opacity: 0; }
+                  100% { transform: translateY(0); opacity: 1; }
+                }
+                .bar-enter {
+                  animation: barSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                }
+              `}</style>
+              <div className="bar-enter w-full bg-slate-950/85 backdrop-blur-2xl border-t border-white/10 px-6 py-3.5 shadow-[0_-15px_40px_rgba(0,0,0,0.6)]">
+                <div className="max-w-[450px] mx-auto flex items-center justify-center gap-3.5">
+                  <div className={`p-1.5 rounded-lg shrink-0 border ${topNotifications[0].type === 'join' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20' : 'bg-red-500/15 text-red-400 border-red-500/20'}`}>
+                     {topNotifications[0].type === 'join' ? (
+                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                     ) : (
+                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                     )}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className={`text-[8px] font-black uppercase tracking-[0.3em] mb-0.5 leading-none ${topNotifications[0].type === 'join' ? 'text-emerald-500/70' : 'text-red-500/70'}`}>
+                      {topNotifications[0].type === 'join' ? 'NEW GLADIATOR' : 'ELIMINATED'}
+                    </span>
+                    <span className="text-white text-[11px] font-black leading-tight truncate drop-shadow-sm font-sans">
+                      {topNotifications[0].text}
+                    </span>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           )}
           {/* Empty lobby */}

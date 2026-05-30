@@ -36,7 +36,7 @@ export interface TikTokLiveOptions {
   /** Called when someone shares */
   onShare?: (user: string, nickname?: string) => void;
   /** Called on connection state change */
-  onConnectionChange?: (connected: boolean, username?: string) => void;
+  onConnectionChange?: (connected: boolean, username?: string, activeViewers?: { handle: string, nickname: string }[]) => void;
   /** Called on error */
   onError?: (message: string) => void;
   /** Jukebox YouTube Callbacks */
@@ -161,7 +161,7 @@ export function useTikTokLive(options: TikTokLiveOptions = {}) {
               onSessionIdReceived?.((data as any).sessionId);
             }
             // Update connection state di App berdasarkan status dari server
-            onConnectionChange?.(!!data.connected, data.username as string | undefined);
+            onConnectionChange?.(!!data.connected, data.username as string | undefined, (data as any).activeViewers);
 
             // Sync YouTube status
             setYoutubeConnected(!!(data as any).youtubeConnected);

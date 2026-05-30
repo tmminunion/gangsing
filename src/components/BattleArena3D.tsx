@@ -1016,13 +1016,15 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       // Parse color keyword from comment (merah, biru, kuning, etc.)
       const parsedColor = parseColorFromText(text);
 
-      // Make them join if not in match — use their requested color!
-      if (!playersRef.current.has(id)) {
+      // Make them join if not in match or RESPAWN if dead — use their requested color!
+      let player = playersRef.current.get(id);
+      if (!player || player.status === 'dead') {
         (ref as any).current.addPlayer(username, nickname || username, false, parsedColor);
+        // Refresh reference after adding/respawning
+        player = playersRef.current.get(id);
       }
 
-      const p = playersRef.current.get(id);
-      if (p && p.status === 'alive') {
+      if (player && player.status === 'alive') {
         // Clean bracketed TikTok emojis (e.g. [wow] -> 😲)
         let cleanedText = text
           .replace(/\[wow\]/gi, '😲')
@@ -1041,8 +1043,8 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
           .replace(/\[heart\]/gi, '❤️')
           .replace(/\[.*?\]/g, ''); // Remove any other unknown bracketed tags
 
-        p.lastActionText = cleanedText.trim().substring(0, 30) || text.substring(0, 30);
-        p.lastActionTime = Date.now();
+        player.lastActionText = cleanedText.trim().substring(0, 30) || text.substring(0, 30);
+        player.lastActionTime = Date.now();
 
         const cmdText = text.toLowerCase().trim();
 
@@ -1062,7 +1064,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
             let targetPlayer: Player | null = null;
             // Search for target player
             for (const other of Array.from(playersRef.current.values()) as Player[]) {
-              if (other.id !== p.id && other.status === 'alive' &&
+              if (other.id !== player.id && other.status === 'alive' &&
                   (other.username.toLowerCase().includes(targetName) || other.id.includes(targetName))) {
                 targetPlayer = other;
                 break;
@@ -1070,21 +1072,21 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
             }
 
             if (targetPlayer) {
-              p.targetPlayerId = targetPlayer.id;
-              p.targetTimer = 8; // Lock target for 8 seconds
-              p.lastActionText = `⚔️ Dendam target @${targetPlayer.username}`;
-              p.lastActionTime = Date.now();
+              player.targetPlayerId = targetPlayer.id;
+              player.targetTimer = 8; // Lock target for 8 seconds
+              player.lastActionText = `⚔️ Dendam target @${targetPlayer.username}`;
+              player.lastActionTime = Date.now();
               // Spawn red angry fire sparks
-              createSpawnExplosion(p.x, p.y, p.z, '#ef4444', 6);
+              createSpawnExplosion(player.x, player.y, player.z, '#ef4444', 6);
             }
           }
         } else if (cmdText.includes('serang') || cmdText.includes('attack') || cmdText.includes('hantam')) {
-          p.attackCooldown = 0; // immediate trigger attack seek
+          player.attackCooldown = 0; // immediate trigger attack seek
         } else if (cmdText.includes('lompat') || cmdText.includes('jump')) {
-          if (p.y <= 0.2) p.y = 5; // vertical leap jump
+          if (player.y <= 0.2) player.y = 5; // vertical leap jump
         }
 
-        awardPlayerXp(p, 10);
+        awardPlayerXp(player, 10);
       }
     },
 
