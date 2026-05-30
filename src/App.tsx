@@ -763,7 +763,7 @@ export default function App() {
       {!isDashRoute && !isYoutubeRoute && (
         <>
           {/* 1. MUSIC HUD (Top - Lowered slightly) */}
-          <div className="absolute top-10 left-0 right-0 flex flex-col items-center gap-1.5 z-[100] pointer-events-none select-none px-4">
+          <div className="absolute top-10 left-0 right-0 flex flex-col items-center gap-1.5 z-[100] pointer-events-auto select-none px-4">
             {/* Now Playing Title Card (Glassmorphism Emerald) */}
             <div className="bg-black/60 border border-white/10 p-2.5 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-3 pointer-events-none w-full max-w-[280px]">
               <div className="bg-emerald-500/20 p-2 rounded-xl shrink-0 border border-emerald-500/20">

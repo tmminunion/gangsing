@@ -994,7 +994,9 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
         bossDamageDealt: 0,
         powerUpsCollected: 0,
         activePowerUps: [],
-        bpTime: 0
+        bpTime: 0,
+        lastActionText: "🛬 Mendarat di Arena!",
+        lastActionTime: Date.now()
       };
 
       playersRef.current.set(id, newPlayer);
@@ -1012,7 +1014,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       onLiveFeedMessage({
         id: Math.random().toString(),
         type: 'join',
-        text: `@${username} memasuki arena battle royale!`,
+        text: `📢 GLADIATOR BARU: @${nickname || username} telah mendarat di arena!`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       });
     },
@@ -1215,33 +1217,37 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       const yPercent = ((targetY - rect.top) / rect.height) * 100;
 
       // Spawn random floating emoji heart
-      const teamColor = BRAND_COLORS[Math.floor(Math.random() * BRAND_COLORS.length)];
-      addTapHeart(xPercent, yPercent, teamColor);
+      // const teamColor = BRAND_COLORS[Math.floor(Math.random() * BRAND_COLORS.length)];
+      // addTapHeart(xPercent, yPercent, teamColor);
 
       // --- GAMEPLAY IMPACT OF TAPPING / LIKING ---
       const alivePlayers = (Array.from(playersRef.current.values()) as Player[]).filter(p => p.status === 'alive');
-      if (alivePlayers.length > 0) {
+      
+      // Optimization: Only apply effects every 10 taps to reduce lag (cumulative effect)
+      const shouldTriggerEffect = (likeCounterRef.current % 10 === 0);
+
+      if (alivePlayers.length > 0 && shouldTriggerEffect) {
         // Pick a random alive player to receive the "Like Boost"
         const luckyPlayer = alivePlayers[Math.floor(Math.random() * alivePlayers.length)];
         
-        // 1. Recover HP (+3 HP)
-        const healAmt = 3;
+        // 1. Recover HP (Cumulative +30 HP since it triggers every 10 taps)
+        const healAmt = 30;
         luckyPlayer.hp = Math.min(luckyPlayer.maxHp, luckyPlayer.hp + healAmt);
         
         // 2. Physical push (impulse boost speed)
         const vel = playerVelocitiesRef.current.get(luckyPlayer.id);
         if (vel) {
           const angle = Math.random() * Math.PI * 2;
-          const pushForce = 5 + Math.random() * 6; // moderate speed push
+          const pushForce = 15 + Math.random() * 10; // stronger push since it's rarer
           vel.vx += Math.cos(angle) * pushForce;
           vel.vz += Math.sin(angle) * pushForce;
         }
 
         // 3. Float combat text above player
-        addFloatingCombatText(`+${healAmt} HP (Like Boost!)`, luckyPlayer.x, luckyPlayer.y + 1.2, luckyPlayer.z, '#10B981');
+        addFloatingCombatText(`🔥 ULTIMATE LIKE BOOST! (+${healAmt} HP)`, luckyPlayer.x, luckyPlayer.y + 1.2, luckyPlayer.z, '#10B981');
         
         // 4. Spawn colorful explosion particles
-        createSpawnExplosion(luckyPlayer.x, luckyPlayer.y, luckyPlayer.z, luckyPlayer.color, 8);
+        createSpawnExplosion(luckyPlayer.x, luckyPlayer.y, luckyPlayer.z, luckyPlayer.color, 12);
       }
 
       // --- SYSTEMATIC AIRDROP DROP BASED ON ACCUMULATED LIKES ---
@@ -3686,6 +3692,27 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
           boss.x += (bdx / bdist) * 2 * delta;
           boss.z += (bdz / bdist) * 2 * delta;
         }
+
+        // --- NEW: Collision with physical Obstacles for Boss ---
+        obstaclesRef.current.forEach(obs => {
+          const dx = boss.x - obs.position.x;
+          const dz = boss.z - obs.position.z;
+          const dist = Math.sqrt(dx * dx + dz * dz);
+          const collisionRange = boss.size * 1.5 + 0.5; // Radius tabrakan boss lebih besar
+          
+          if (dist < collisionRange) {
+            // Push boss back slightly
+            boss.x += (dx / dist) * 0.3;
+            boss.z += (dz / dist) * 0.3;
+            boss.targetX = undefined; // trigger path recalculation
+            
+            // Damage obstacle (Boss is powerful, damages obstacles on touch)
+            if (obs.userData && obs.userData.hp !== undefined) {
+              const bossDmg = 50 * (boss.phase || 1);
+              obs.userData.hp -= bossDmg;
+            }
+          }
+        });
 
         // Boss attack
         const nowSec = now / 1000;
