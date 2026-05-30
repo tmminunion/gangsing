@@ -227,6 +227,10 @@ export default function App() {
       setFloorTheme(theme);
       battleArenaRef.current?.changeFloorTheme(theme);
     },
+    onDiscoModeChange: (duration) => {
+      console.log('🔌 [Socket] Disco mode trigger received, duration:', duration);
+      battleArenaRef.current?.triggerDiscoMode(duration);
+    },
   });
 
   // Stats
@@ -260,7 +264,10 @@ export default function App() {
 
   // Simple path-based routing
   const currentRoute = window.location.pathname;
-  const isDashRoute = currentRoute === '/dash' || currentRoute === '/stat' || window.location.hash === '#/dash' || window.location.hash === '#/stat';
+  const urlParams = new URLSearchParams(window.location.search);
+  const isStreamMode = urlParams.get('stream') === 'true';
+  const isYoutubeRoute = currentRoute === '/youtube' || window.location.hash === '#/youtube';
+  const isDashRoute = !isStreamMode && !isYoutubeRoute && (currentRoute === '/dash' || currentRoute === '/stat' || window.location.hash === '#/dash' || window.location.hash === '#/stat');
 
   const navigateTo = (path: string) => {
     window.history.pushState(null, '', path);
@@ -280,6 +287,22 @@ export default function App() {
       window.removeEventListener('hashchange', handleRouteChange);
     };
   }, []);
+
+  // Auto-connect if in stream mode and has last username
+  useEffect(() => {
+    if (isStreamMode && tiktokUsername && !isConnected && !connecting && relayConnected) {
+      console.log('[StreamMode] Auto-connecting to TikTok:', tiktokUsername);
+      setConnecting(true);
+      connectToTikTokRelay(tiktokUsername, tiktokSessionId);
+    }
+  }, [isStreamMode, relayConnected]);
+
+  // Force clean HUD in stream mode
+  useEffect(() => {
+    if (isStreamMode) {
+      setIsLayarBersih(true);
+    }
+  }, [isStreamMode]);
 
   // Synchronize state config ref for YouTube player callbacks
   const configRef = useRef({ currentYoutubeId, currentYoutubeTitle, jukeboxQueue, isAutoplay, isShuffle });
@@ -726,17 +749,19 @@ export default function App() {
           onAddKillScore={handleKillScore}
           onWinnerDecided={addMatchWinner}
           onBossMvpDecided={handleBossMvp}
-          onMusicAirdropTriggered={() => sendSocketMessage({ type: 'request_webspy_song' })}
+          onMusicAirdropTriggered={() => {
+            sendSocketMessage({ type: 'request_webspy_song' });
+          }}
         />
       </div>
 
-      {/* Overlay ketika berada di rute dashboard: semi-transparan, blur glassmorphic agar teks dashboard terbaca */}
-      {isDashRoute && (
+      {/* Overlay ketika berada di rute dashboard atau youtube: semi-transparan, blur glassmorphic agar teks dashboard terbaca */}
+      {(isDashRoute || isYoutubeRoute) && (
         <div className="absolute inset-0 bg-[#050814]/85 backdrop-blur-[6px] z-10 pointer-events-none transition-all duration-300" />
       )}
 
-      {/* HEADER & NAV — ONLY ON DASHBOARD ROUTE */}
-      {isDashRoute && (
+      {/* HEADER & NAV — ONLY ON DASHBOARD OR YOUTUBE ROUTE */}
+      {(isDashRoute || isYoutubeRoute) && (
         <>
           {/* GLOWING AMBIENT HEADER BG */}
           <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-indigo-950/20 to-transparent pointer-events-none" />
@@ -744,81 +769,96 @@ export default function App() {
           {/* TOP HEADER CONTROLS DESK */}
           <header className="relative border-b border-white/5 bg-slate-950/50 backdrop-blur-xl px-6 py-4 flex flex-wrap items-center justify-between gap-4 z-40">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-gradient-to-tr from-rose-500 to-indigo-600 shadow-lg shadow-indigo-950/40 animate-pulse">
+              <div className={`p-2.5 rounded-xl shadow-lg animate-pulse ${isYoutubeRoute ? 'bg-gradient-to-tr from-red-500 to-orange-600 shadow-red-950/40' : 'bg-gradient-to-tr from-rose-500 to-indigo-600 shadow-indigo-950/40'}`}>
                 <Tv className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-2">
-                  TIKTOK LIVE <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-rose-400">3D BATTLE ARENA</span>
+                <h1 className="text-lg font-black tracking-tight text-white flex items-center gap-2 uppercase">
+                  {isYoutubeRoute ? 'YouTube Live' : 'TikTok Live'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-rose-400">3D BATTLE ARENA</span>
                 </h1>
                 <p className="text-xs text-slate-400 font-medium font-mono">
-                  Real-time TikTok Live battle royale — terhubung ke stream langsung
+                  Real-time {isYoutubeRoute ? 'YouTube' : 'TikTok'} battle royale — terhubung ke stream langsung
                 </p>
               </div>
             </div>
 
-            {/* CONNECTION STATUS & INPUT */}
+            {/* CONNECTION STATUS & INPUT (Switch between TikTok and YouTube inputs) */}
             <div className="flex items-center gap-3">
-              {isConnected ? (
-                <div className="flex items-center gap-3 bg-emerald-900/20 border border-emerald-500/20 px-3.5 py-1.5 rounded-full shadow-inner">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  <span className="text-xs text-emerald-300 font-black tracking-wide uppercase">
-                    CONNECTED: @{tiktokUsername}
-                  </span>
-                  <button 
-                    onClick={handleDisconnectStream}
-                    className="text-[10px] text-white hover:text-rose-400 font-black cursor-pointer bg-emerald-950/60 transition-colors px-2.5 py-1 rounded"
-                  >
-                    DISCONNECT
-                  </button>
+              {isYoutubeRoute ? (
+                /* YouTube Connection UI */
+                <div className="flex items-center gap-3">
+                   <div className="bg-slate-900/90 border border-white/10 p-1.5 rounded-full shadow-md flex items-center gap-2">
+                      <span className="pl-3 text-[11px] font-bold text-slate-400">youtube.com/</span>
+                      <input 
+                        type="text" 
+                        placeholder="Channel ID / Live URL" 
+                        className="bg-transparent border-0 ring-0 outline-none text-white text-xs font-black w-48 placeholder-slate-600"
+                      />
+                      <button className="bg-red-600 hover:bg-red-500 text-white font-black text-xs px-4 py-1.5 rounded-full transition-all">HUBUNGKAN YT</button>
+                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleConnectStream} className="flex flex-wrap lg:flex-nowrap items-center gap-2 bg-slate-900/90 border border-white/10 p-1.5 rounded-2xl lg:rounded-full shadow-md">
-                  <div className="flex items-center pl-2.5 gap-1 text-[11px] font-bold text-slate-400">
-                    <span>tiktok.com/@</span>
-                  </div>
-                  <input
-                    type="text"
-                    value={tiktokUsername}
-                    onChange={(e) => setTiktokUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/gi, ''))}
-                    placeholder="User_Id"
-                    disabled={connecting}
-                    className="bg-transparent border-0 ring-0 outline-none text-white text-xs font-black w-24 placeholder-slate-600 focus:ring-0 focus:outline-none"
-                  />
-                  <div className="w-px h-4 bg-white/10 hidden lg:block" />
-                  <input
-                    type="password"
-                    value={tiktokSessionId}
-                    onChange={(e) => setTiktokSessionId(e.target.value)}
-                    placeholder="Session ID (Opsional)"
-                    disabled={connecting}
-                    className="bg-transparent border-0 ring-0 outline-none text-white text-xs font-black w-36 placeholder-slate-600 focus:ring-0 focus:outline-none"
-                  />
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-cyan-950/40 border border-cyan-800/30 rounded-full text-[10px] text-cyan-300 font-bold select-none">
-                    <span>Auto:</span>
-                    <a
-                      href="javascript:(function(){const m=document.cookie.match(/sessionid=([^;]+)/);if(!m){alert('Aduh aa Baim, pastikan sudah login ke tiktok.com dulu ya!');return;}const s=m[1];navigator.clipboard.writeText(s).then(()=>{console.log('Session ID copied to clipboard');}).catch(()=>{});fetch('https://tikserver.nufat.id/api/set-session-id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:s})}).then(r=>r.json()).then(d=>{alert('✅ Berhasil! Session ID otomatis terkirim & disalin ke clipboard aa Baim.');}).catch(err=>{alert('⚠️ Session ID disalin ke clipboard! Silakan paste langsung di dashboard.');});})()"
-                      className="bg-cyan-900/60 hover:bg-cyan-800 hover:text-white px-2 py-0.5 rounded transition-all cursor-pointer shadow-sm border border-cyan-700/40 text-cyan-200"
-                      title="Seret tombol ini ke bookmarks bar browser. Buka tiktok.com, klik bookmark ini untuk mendapatkan Session ID otomatis."
-                      onClick={(e) => {
-                        // Hanya cegah default jika tidak di drag/drop
-                        if (e.button === 0) {
-                          e.preventDefault();
-                          alert("Aa Baim, caranya gampang:\n1. Seret (drag) tombol 'Auto Get 🚀' ini ke Bookmarks Bar browser aa Baim.\n2. Buka https://www.tiktok.com di tab baru (pastikan sudah login).\n3. Klik bookmark tersebut di Bookmarks Bar.\n4. Selesai! Halaman dashboard ini akan otomatis terisi Session ID-nya!");
-                        }
-                      }}
+                /* TikTok Connection UI (Existing) */
+                isConnected ? (
+                  <div className="flex items-center gap-3 bg-emerald-900/20 border border-emerald-500/20 px-3.5 py-1.5 rounded-full shadow-inner">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span className="text-xs text-emerald-300 font-black tracking-wide uppercase">
+                      CONNECTED: @{tiktokUsername}
+                    </span>
+                    <button 
+                      onClick={handleDisconnectStream}
+                      className="text-[10px] text-white hover:text-rose-400 font-black cursor-pointer bg-emerald-950/60 transition-colors px-2.5 py-1 rounded"
                     >
-                      Auto Get 🚀
-                    </a>
+                      DISCONNECT
+                    </button>
                   </div>
-                  <button
-                    type="submit"
-                    disabled={connecting}
-                    className="bg-gradient-to-r from-cyan-500 to-rose-500 hover:from-cyan-400 hover:to-rose-400 text-white font-black text-xs px-4 py-1.5 rounded-full shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-                  >
-                    {connecting ? 'Syncing...' : 'HUBUNGKAN LIVE'}
-                  </button>
-                </form>
+                ) : (
+                  <form onSubmit={handleConnectStream} className="flex flex-wrap lg:flex-nowrap items-center gap-2 bg-slate-900/90 border border-white/10 p-1.5 rounded-2xl lg:rounded-full shadow-md">
+                    <div className="flex items-center pl-2.5 gap-1 text-[11px] font-bold text-slate-400">
+                      <span>tiktok.com/@</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={tiktokUsername}
+                      onChange={(e) => setTiktokUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_.]/gi, ''))}
+                      placeholder="User_Id"
+                      disabled={connecting}
+                      className="bg-transparent border-0 ring-0 outline-none text-white text-xs font-black w-24 placeholder-slate-600 focus:ring-0 focus:outline-none"
+                    />
+                    <div className="w-px h-4 bg-white/10 hidden lg:block" />
+                    <input
+                      type="password"
+                      value={tiktokSessionId}
+                      onChange={(e) => setTiktokSessionId(e.target.value)}
+                      placeholder="Session ID (Opsional)"
+                      disabled={connecting}
+                      className="bg-transparent border-0 ring-0 outline-none text-white text-xs font-black w-36 placeholder-slate-600 focus:ring-0 focus:outline-none"
+                    />
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-cyan-950/40 border border-cyan-800/30 rounded-full text-[10px] text-cyan-300 font-bold select-none">
+                      <span>Auto:</span>
+                      <a
+                        href="javascript:(function(){const m=document.cookie.match(/sessionid=([^;]+)/);if(!m){alert('Aduh aa Baim, pastikan sudah login ke tiktok.com dulu ya!');return;}const s=m[1];navigator.clipboard.writeText(s).then(()=>{console.log('Session ID copied to clipboard');}).catch(()=>{});fetch('https://tikserver.nufat.id/api/set-session-id',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:s})}).then(r=>r.json()).then(d=>{alert('✅ Berhasil! Session ID otomatis terkirim & disalin ke clipboard aa Baim.');}).catch(err=>{alert('⚠️ Session ID disalin ke clipboard! Silakan paste langsung di dashboard.');});})()"
+                        className="bg-cyan-900/60 hover:bg-cyan-800 hover:text-white px-2 py-0.5 rounded transition-all cursor-pointer shadow-sm border border-cyan-700/40 text-cyan-200"
+                        title="Seret tombol ini ke bookmarks bar browser. Buka tiktok.com, klik bookmark ini untuk mendapatkan Session ID otomatis."
+                        onClick={(e) => {
+                          if (e.button === 0) {
+                            e.preventDefault();
+                            alert("Aa Baim, caranya gampang:\n1. Seret (drag) tombol 'Auto Get 🚀' ini ke Bookmarks Bar browser aa Baim.\n2. Buka https://www.tiktok.com di tab baru (pastikan sudah login).\n3. Klik bookmark tersebut di Bookmarks Bar.\n4. Selesai! Halaman dashboard ini akan otomatis terisi Session ID-nya!");
+                          }
+                        }}
+                      >
+                        Auto Get 🚀
+                      </a>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={connecting}
+                      className="bg-gradient-to-r from-cyan-500 to-rose-500 hover:from-cyan-400 hover:to-rose-400 text-white font-black text-xs px-4 py-1.5 rounded-full shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                      {connecting ? 'Syncing...' : 'HUBUNGKAN LIVE'}
+                    </button>
+                  </form>
+                )
               )}
 
               {/* Manual sound indicator toggle */}
@@ -838,7 +878,7 @@ export default function App() {
                 type="button"
                 onClick={() => navigateTo('/')}
                 className={`flex items-center gap-2 py-2 px-4 rounded-xl text-xs font-black tracking-wide transition-all active:scale-95 cursor-pointer ${
-                  !isDashRoute
+                  !isDashRoute && !isYoutubeRoute
                     ? 'bg-gradient-to-r from-rose-500 to-indigo-600 text-white shadow-lg shadow-indigo-950/40'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/45'
                 }`}
@@ -858,6 +898,19 @@ export default function App() {
               >
                 <Layers className="w-4 h-4" />
                 <span>📊 DASHBOARD</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigateTo('/youtube')}
+                className={`flex items-center gap-2 py-2 px-4 rounded-xl text-xs font-black tracking-wide transition-all active:scale-95 cursor-pointer ${
+                  isYoutubeRoute
+                    ? 'bg-red-600/90 text-white shadow-lg shadow-red-950/40'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/45'
+                }`}
+              >
+                <Tv className="w-4 h-4" />
+                <span>🔴 YOUTUBE LIVE</span>
               </button>
             </div>
 

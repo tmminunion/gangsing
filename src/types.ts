@@ -196,6 +196,19 @@ export interface GameSettings {
   arenaRadius: number;
 }
 
+/** Game mode: Battle Royale (PvP) or Boss Raid (co-op vs boss) */
+export type GameMode = 'battle_royale' | 'boss_raid';
+
+/** Current state of a Boss Raid co-op match */
+export interface RaidState {
+  wave: number;
+  maxWaves: number;
+  phase: number;
+  isActive: boolean;
+  /** Total damage dealt to current boss */
+  totalDamageDealt: number;
+}
+
 export interface MatchHistoryEntry {
   id: string;
   winnerName: string;

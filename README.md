@@ -48,7 +48,7 @@ Setiap tap layar atau Like yang masuk dari penonton:
   * **⚔️ WEAPON (Kotak W)**: Memberikan senjata acak yang kuat (Laser, Tombak Emas, Palu, dll).
   * **⭐ GOLD JACKPOT (Kotak G)**: Memberikan tambahan +150 XP dan +100 Poin skor instan!
   * **💥 BOMB PRANK (Kotak B)**: Prank zonk! Meledak saat disentuh, mengurangi HP pemain sebanyak -30 HP, dan mementalkannya ke belakang dengan kencang!
-  * **🔮 ORB SKILL (Kotak O)**: Memberikan power-up berupa pusaran orb pertahanan di sekitar pemain selama 15 detik!
+  * **🔮 ORB SKILL (Kotak O)**: Memberikan power-up berupa pusaran orb pertahanan di sekitar pemain selama 75 detik!
   * **🎵 MUSIC BOX (Kotak ♫ Warna Pink)**: Mendapatkan +100 XP instan! Saat tersentuh, akan langsung men-trigger bot WebSpy untuk mencarikan satu lagu hit acak dan langsung memutarnya secara otomatis.
 
 ---

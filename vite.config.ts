@@ -12,7 +12,7 @@ export default defineConfig(() => {
       },
     },
     server: {
-      allowedHosts: true,
+      allowedHosts: true as true,
       proxy: {
         '/api': 'http://localhost:3011',
       },

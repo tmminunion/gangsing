@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 export interface TikTokEvent {
-  type: 'chat' | 'gift' | 'member' | 'like' | 'roomUser' | 'follow' | 'share' | 'connected' | 'disconnected' | 'error' | 'status' | 'play_youtube' | 'update_queue' | 'toggle_autoplay' | 'toggle_shuffle' | 'jukebox_state' | 'init_assets' | 'import_obj' | 'clear_objs' | 'change_floor';
+  type: 'chat' | 'gift' | 'member' | 'like' | 'roomUser' | 'follow' | 'share' | 'connected' | 'disconnected' | 'error' | 'status' | 'play_youtube' | 'update_queue' | 'toggle_autoplay' | 'toggle_shuffle' | 'jukebox_state' | 'init_assets' | 'import_obj' | 'clear_objs' | 'change_floor' | 'trigger_disco';
   user?: string;
   nickname?: string;
   text?: string;
@@ -49,6 +49,7 @@ export interface TikTokLiveOptions {
   onImportObj?: (filename: string, url: string) => void;
   onClearObjs?: () => void;
   onFloorThemeChange?: (theme: string) => void;
+  onDiscoModeChange?: (duration: number) => void;
 }
 
 export function useTikTokLive(options: TikTokLiveOptions = {}) {
@@ -73,6 +74,7 @@ export function useTikTokLive(options: TikTokLiveOptions = {}) {
     onImportObj,
     onClearObjs,
     onFloorThemeChange,
+    onDiscoModeChange,
   } = options;
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -221,6 +223,10 @@ export function useTikTokLive(options: TikTokLiveOptions = {}) {
 
           case 'change_floor':
             if ((data as any).theme) onFloorThemeChange?.((data as any).theme);
+            break;
+
+          case 'trigger_disco':
+            if ((data as any).duration) onDiscoModeChange?.((data as any).duration);
             break;
         }
       };

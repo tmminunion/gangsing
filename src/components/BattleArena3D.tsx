@@ -2337,7 +2337,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       p.maxHp += 15;
       p.hp = p.maxHp; // Full dynamic recovery reward
       p.shield = Math.min(100, p.shield + 50); // Bonus shield allocation
-      p.size = Math.min(2.5, 1.0 + (p.level - 1) * 0.15); // Grow standard size factor
+      p.size = Math.min(2.5, 1.0 + (p.level - 1) * 0.015); // Grow standard size factor
       leveledUp = true;
       nextXpNeeded = p.level * 100;
     }
@@ -2872,6 +2872,10 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
 
   // Main game tick: Three.js Setup & Simulation Logic loop
   useEffect(() => {
+    // Detect stream mode for performance optimization
+    const urlParams = new URLSearchParams(window.location.search);
+    const isStreamMode = urlParams.get('stream') === 'true';
+
     // 1. Scene Construction
     const scene = new THREE.Scene();
     mainSceneRef.current = scene;
@@ -2889,16 +2893,19 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     // 3. Renderer Setup
     const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current!,
-      antialias: true,
+      antialias: !isStreamMode, // Disable antialias in stream mode to save CPU
       alpha: false,
       powerPreference: 'high-performance'
     });
     renderer.setSize(canvasRef.current!.clientWidth, canvasRef.current!.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
+
+    // Reduce pixel ratio in stream mode (1.0 is enough for software rendering)
+    renderer.setPixelRatio(isStreamMode ? 1.0 : Math.min(window.devicePixelRatio, 2));
+
+    // Disable shadows in stream mode - huge CPU boost!
+    renderer.shadowMap.enabled = !isStreamMode;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mainRendererRef.current = renderer;
-
     // 4. Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); // Diubah jadi lebih terang (putih dengan intensitas 2.0)
     scene.add(ambientLight);
@@ -4152,7 +4159,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
               foundMission = true;
 
               // If close enough AND near ground, claim it!
-              if (closeAdDist < 1.8 && ad.y < 0.8) {
+              if (closeAdDist < 1.8 && ad.y <= 0.5) {
                 awardPlayerXp(p, 80); // Award XP for getting the drop
                 if (ad.type === 'health_crate') {
                   p.hp = Math.min(p.maxHp, p.hp + 50);
@@ -4176,18 +4183,18 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
                   createSpawnExplosion(p.x, p.y, p.z, '#ef4444', 20);
                   addFloatingCombatText('💥 ZONK: BOM! (-30 HP)', p.x, p.y + 1.5, p.z, '#ef4444');
                 } else if (ad.type === 'orbital_orbs') {
-                  // Apply active power-up for 15 seconds
+                  // Apply active power-up for 75 seconds
                   const powerUp: ActivePowerUp = {
                     type: 'orbital_orbs',
                     startTime: Date.now(),
-                    duration: 15
+                    duration: 75
                   };
                   p.activePowerUps = p.activePowerUps || [];
                   p.activePowerUps.push(powerUp);
 
                   // Purple particle burst
                   createSpawnExplosion(p.x, p.y, p.z, '#a855f7', 20);
-                  addFloatingCombatText('🔮 SPECIAL: ORB SHIELD! (15 Detik)', p.x, p.y + 1.8, p.z, '#a855f7');
+                  addFloatingCombatText('🔮 SPECIAL: ORB SHIELD! (75 Detik)', p.x, p.y + 1.8, p.z, '#a855f7');
                 } else if (ad.type === 'gold_crate') {
                   // Gold Jackpot! Award extra XP and bonus points
                   awardPlayerXp(p, 150);
