@@ -429,14 +429,8 @@ function processChatMessage(handle: string, nick: string, text: string) {
   broadcast(msg);
 
   // Jukebox auto-play/queue via chat comment
-  const trimmedText = text.trim();
-  const match = trimmedText.match(/^(?:music|play|mainkan|putar|request|next)\s+(.+)/i);
-  const discoMatch = trimmedText.match(/^!(?:disco|party)/i);
-
-  if (discoMatch) {
-    console.log(`🪩 Disco mode requested via chat`);
-    broadcast({ type: 'trigger_disco', duration: 15 });
-  }
+  const msgText = (msg.text || '').trim();
+  const match = msgText.match(/^(?:music|play|mainkan|putar|request|next)\s+(.+)/i);
 
   if (match) {
     const query = match[1].trim();

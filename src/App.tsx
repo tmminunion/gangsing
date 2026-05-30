@@ -225,12 +225,15 @@ export default function App() {
     },
     onFloorThemeChange: (theme) => {
       console.log('🔌 [Socket] Floor theme change received:', theme);
-      setFloorTheme(theme);
-      battleArenaRef.current?.changeFloorTheme(theme);
-    },
-    onDiscoModeChange: (duration) => {
-      console.log('🔌 [Socket] Disco mode trigger received, duration:', duration);
-      battleArenaRef.current?.triggerDiscoMode(duration);
+      
+      // Fix: If it's a relative path from the server, make it absolute
+      const relayHttpUrl = 'https://tikserver.nufat.id';
+      const resolvedTheme = theme.startsWith('/imported/') 
+        ? `${relayHttpUrl}${theme}` 
+        : theme;
+        
+      setFloorTheme(resolvedTheme);
+      battleArenaRef.current?.changeFloorTheme(resolvedTheme);
     },
   });
 
@@ -721,6 +724,11 @@ export default function App() {
                     console.log('✅ Custom floor texture uploaded successfully:', res.filename);
                     setFloorTheme(res.url);
                     battleArenaRef.current?.changeFloorTheme(res.url);
+                    // Sync with other clients via WebSocket
+                    sendSocketMessage({
+                      type: 'change_floor',
+                      theme: res.url
+                    });
                   } else {
                     alert(`❌ Gagal upload tekstur ke server: ${res.error}`);
                   }

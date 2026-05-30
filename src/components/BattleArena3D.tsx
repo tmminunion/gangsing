@@ -30,7 +30,6 @@ export interface BattleArenaRef {
   importOBJFromUrl: (url: string, filename: string) => void;
   clearAllImportedOBJs: () => void;
   changeFloorTheme: (theme: string) => void;
-  triggerDiscoMode: (duration: number) => void;
   respawnObstacles: () => void;
 }
 
@@ -112,8 +111,6 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
   const currentWeatherRef = useRef<string>('normal');
   const ambientLightRef = useRef<THREE.AmbientLight | null>(null);
   const dirLightRef = useRef<THREE.DirectionalLight | null>(null);
-  const discoTimerRef = useRef<number>(0);
-  const discoActiveRef = useRef<boolean>(false);
   const spotlightRef = useRef<THREE.SpotLight | null>(null);
   const movingPointLightRef = useRef<THREE.PointLight | null>(null);
   const movingLightOrbRef = useRef<THREE.Mesh | null>(null);
@@ -904,12 +901,6 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       applyFloorTheme(theme);
     },
 
-    triggerDiscoMode: (duration: number) => {
-      console.log('🕺 [Disco] Activating disco mode for', duration, 'seconds');
-      discoTimerRef.current = duration;
-      discoActiveRef.current = true;
-    },
-
     respawnObstacles: () => {
       if (!mainSceneRef.current) return;
       console.log('[Import] Respawning obstacles with new models');
@@ -1055,9 +1046,13 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
 
         const cmdText = text.toLowerCase().trim();
 
-        // 1. Weather control commands via chat
+        // 1. Weather & Music control commands via chat
         if (cmdText === 'hujan' || cmdText === 'badai' || cmdText === 'malam' || cmdText === 'normal') {
           changeWeather(cmdText);
+        }
+
+        if (cmdText === 'skip' || cmdText === 'next') {
+          onNextSong?.();
         }
 
         // 2. Targeting command (#serang @nickname)
@@ -1243,8 +1238,8 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
           vel.vz += Math.sin(angle) * pushForce;
         }
 
-        // 3. Float combat text above player
-        addFloatingCombatText(`🔥 ULTIMATE LIKE BOOST! (+${healAmt} HP)`, luckyPlayer.x, luckyPlayer.y + 1.2, luckyPlayer.z, '#10B981');
+        // 3. Float combat text above player (DISABLED for performance during auto-taps)
+        // addFloatingCombatText(`🔥 ULTIMATE LIKE BOOST! (+${healAmt} HP)`, luckyPlayer.x, luckyPlayer.y + 1.2, luckyPlayer.z, '#10B981');
         
         // 4. Spawn colorful explosion particles
         createSpawnExplosion(luckyPlayer.x, luckyPlayer.y, luckyPlayer.z, luckyPlayer.color, 12);
@@ -2592,33 +2587,25 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     const bx = Math.cos(ang) * dist;
     const bz = Math.sin(ang) * dist;
     
-    const ringGeo = new THREE.RingGeometry(0.3, 0.6, 24);
+    const ringGeo = new THREE.RingGeometry(0.5, 0.55, 32); // Thinner, more elegant ring
     const ringMat = new THREE.MeshBasicMaterial({
       color: 0xFFD700,
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.7
+      opacity: 0.8
     });
     const ring = new THREE.Mesh(ringGeo, ringMat);
     ring.rotation.x = Math.PI / 2;
-    ring.position.set(bx, 0.15, bz);
+    ring.position.set(bx, 0.05, bz); // Closer to floor
     mainSceneRef.current.add(ring);
     
-    const beamGeo = new THREE.CylinderGeometry(0.05, 0.15, 6, 8);
-    const beamMat = new THREE.MeshBasicMaterial({
-      color: 0xFFD700,
-      transparent: true,
-      opacity: 0.2
-    });
-    const beam = new THREE.Mesh(beamGeo, beamMat);
-    beam.position.set(bx, 3, bz);
-    mainSceneRef.current.add(beam);
+    // Pillar removed for performance and aesthetics
     
     battlePointsRef.current.push({
       x: bx, z: bz, active: true,
       spawnTime: Date.now(),
       ringMesh: ring,
-      beamMesh: beam
+      beamMesh: null
     });
   };
 
@@ -2629,10 +2616,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       mainSceneRef.current.remove(bp.ringMesh);
       bp.ringMesh = null;
     }
-    if (bp.beamMesh) {
-      mainSceneRef.current.remove(bp.beamMesh);
-      bp.beamMesh = null;
-    }
+    // No beam to remove anymore
     bp.active = false;
   };
 
@@ -3345,32 +3329,6 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       const delta = (now - lastTime) / 1000;
       lastTime = now;
 
-      // 🕺 Disco Mode animation loop
-      if (discoActiveRef.current) {
-        discoTimerRef.current -= delta;
-        if (discoTimerRef.current <= 0) {
-          discoActiveRef.current = false;
-          if (ambientLightRef.current) {
-            ambientLightRef.current.color.setHex(0xffffff);
-            ambientLightRef.current.intensity = 2.0;
-          }
-          if (dirLightRef.current) {
-            dirLightRef.current.color.setHex(0x8B5CF6);
-          }
-        } else {
-          const t = Math.floor(now / 150);
-          const colors = [0xff00ff, 0x00ffff, 0xffff00, 0xff0000, 0x00ff00, 0x0000ff];
-          const chosenColor = colors[t % colors.length];
-          if (ambientLightRef.current) {
-            ambientLightRef.current.color.setHex(chosenColor);
-            ambientLightRef.current.intensity = 3.0;
-          }
-          if (dirLightRef.current) {
-            dirLightRef.current.color.setHex(colors[(t + 2) % colors.length]);
-          }
-        }
-      }
-
       // Pulse the safe zone boundary ring
       if (safeZonePulseMeshRef.current) {
         const timeFactor = now * 0.003;
@@ -3721,19 +3679,35 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
         bossMesh.rotation.y += delta * 2;
         bossMesh.position.set(boss.x, 0, boss.z);
 
-        // Regular melee attack
-        if (nowSec - boss.lastAttackTime > 1.5) {
-          boss.lastAttackTime = nowSec;
+        // Regular melee attack & PHYSICAL COLLISION
+        if (nowSec - boss.lastAttackTime > 0.1) { // Check collision more frequently than attack
           listPlayers.forEach((target: any) => {
             if (target.status === 'dead') return;
             const dx2 = target.x - boss.x;
             const dz2 = target.z - boss.z;
             const dist2 = Math.sqrt(dx2*dx2 + dz2*dz2);
-            if (dist2 < boss.size * 2.5) {
-              // Reduced damage to prevent instant elimination
-              const meleeDmg = boss.phase >= 3 ? 5 : boss.phase >= 2 ? 4 : 3;
-              damagePlayer(target, meleeDmg, boss.name);
+            const collisionDist = boss.size * 2.2;
+            
+            if (dist2 < collisionDist) {
+              // --- 1. Physical Push (Anti-Tembus) ---
+              const nx = dx2 / (dist2 || 1);
+              const nz = dz2 / (dist2 || 1);
+              const pushForce = 0.5 + (boss.phase * 0.2); // Boss pushes harder in later phases
               
+              target.x += nx * pushForce;
+              target.z += nz * pushForce;
+              target.targetX = undefined; // recalculate path
+              
+              // Boss also gets slightly blocked/pushed back
+              boss.x -= nx * 0.05;
+              boss.z -= nz * 0.05;
+
+              // --- 2. Regular melee damage (throttle to 1.5s) ---
+              if (nowSec - boss.lastAttackTime > 1.5) {
+                const meleeDmg = boss.phase >= 3 ? 5 : boss.phase >= 2 ? 4 : 3;
+                damagePlayer(target, meleeDmg, boss.name);
+                boss.lastAttackTime = nowSec; // Only reset timer if damage actually happened
+              }
             }
           });
         }
@@ -4466,10 +4440,16 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
           const dx = p.x - obs.position.x;
           const dz = p.z - obs.position.z;
           const dist = Math.sqrt(dx * dx + dz * dz);
-          if (dist < 1.8) {
-            // Push back
-            p.x += (dx / dist) * 0.5;
-            p.z += (dz / dist) * 0.5;
+          const collisionRadius = 1.8;
+          
+          if (dist < collisionRadius) {
+            // Push back dynamically based on overlap to prevent clipping/tunneling
+            const overlap = collisionRadius - dist;
+            const nx = dx / (dist || 1);
+            const nz = dz / (dist || 1);
+            
+            p.x += nx * (overlap + 0.1); // Add small buffer
+            p.z += nz * (overlap + 0.1);
             p.targetX = undefined; // trigger path recalculation
 
             // Reduce HP on collision (damage: 5 HP, cooldown: 1.0s)
