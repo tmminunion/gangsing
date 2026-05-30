@@ -40,6 +40,7 @@ export default function App() {
   const [isAutoplay, setIsAutoplay] = useState(true);
   const [isShuffle, setIsShuffle] = useState(false);
   const [floorTheme, setFloorTheme] = useState('scifi');
+  const [safeZoneRadius, setSafeZoneRadius] = useState(40);
   const ytPlayerRef = useRef<any>(null);
 
   // Connection settings
@@ -752,8 +753,48 @@ export default function App() {
           onMusicAirdropTriggered={() => {
             sendSocketMessage({ type: 'request_webspy_song' });
           }}
+          currentYoutubeTitle={currentYoutubeTitle}
+          onNextSong={playNextInQueue}
+          onSafeZoneUpdate={() => {}}
         />
       </div>
+
+      {/* GLOBAL HUD ELEMENTS — Always on top of everything (z-100) */}
+      {!isDashRoute && !isYoutubeRoute && (
+        <>
+          {/* 1. MUSIC HUD (Top - Lowered slightly) */}
+          <div className="absolute top-10 left-0 right-0 flex flex-col items-center gap-1.5 z-[100] pointer-events-none select-none px-4">
+            {/* Now Playing Title Card (Glassmorphism Emerald) */}
+            <div className="bg-black/60 border border-white/10 p-2.5 rounded-2xl shadow-2xl backdrop-blur-xl flex items-center gap-3 pointer-events-none w-full max-w-[280px]">
+              <div className="bg-emerald-500/20 p-2 rounded-xl shrink-0 border border-emerald-500/20">
+                 <svg className="w-4 h-4 text-emerald-400 animate-[spin_4s_linear_infinite]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M9 18V5l12-2v13" />
+                    <circle cx="6" cy="18" r="3" />
+                    <circle cx="18" cy="16" r="3" />
+                 </svg>
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                 <span className="text-[8px] text-emerald-400 font-black uppercase tracking-widest leading-none mb-1 font-mono">Now Playing</span>
+                 <span className="text-white text-[11px] font-black truncate font-sans block">
+                   {currentYoutubeTitle || 'Menunggu lagu...'}
+                 </span>
+              </div>
+            </div>
+
+            {/* Next Song Button — Glassmorphism style with more padding */}
+            <button
+              onClick={playNextInQueue}
+              className="bg-black/60 hover:bg-black/80 border border-emerald-500/30 text-emerald-400 py-2.5 px-10 rounded-xl shadow-lg backdrop-blur-xl transition-all active:scale-90 pointer-events-auto cursor-pointer flex items-center justify-center gap-2 group mt-0.5"
+            >
+              <span className="text-[10px] font-black uppercase tracking-widest">Next Song</span>
+              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="5 4 15 12 5 20 5 4" fill="currentColor" />
+                <line x1="19" y1="5" x2="19" y2="19" />
+              </svg>
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Overlay ketika berada di rute dashboard atau youtube: semi-transparan, blur glassmorphic agar teks dashboard terbaca */}
       {(isDashRoute || isYoutubeRoute) && (

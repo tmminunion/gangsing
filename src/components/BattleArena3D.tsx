@@ -14,6 +14,9 @@ interface BattleArena3DProps {
   onBossMvpDecided?: (mvp: { username: string; damage: number }) => void;
   onKillEvent?: (data: { killer: string; victim: string; killerColor: string; streak: number; streakText: string }) => void;
   onMusicAirdropTriggered?: () => void;
+  currentYoutubeTitle?: string | null;
+  onNextSong?: () => void;
+  onSafeZoneUpdate?: (radius: number) => void;
 }
 export interface BattleArenaRef {
   addPlayer: (username: string, nickname: string, isPremium?: boolean, forcedColor?: string) => void;
@@ -39,7 +42,10 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
   onWinnerDecided,
   onBossMvpDecided,
   onKillEvent,
-  onMusicAirdropTriggered
+  onMusicAirdropTriggered,
+  currentYoutubeTitle,
+  onNextSong,
+  onSafeZoneUpdate
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -3383,6 +3389,7 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
         safeZoneDirectionRef.current = -1; // start shrinking
       }
       setSafeZoneRadius(safeZoneRadiusRef.current);
+      onSafeZoneUpdate?.(safeZoneRadiusRef.current);
 
       // Animate Moving Neon PointLight (Random target walk with RGB cycling)
       if (movingPointLightRef.current && movingLightOrbRef.current) {
@@ -4971,11 +4978,6 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
         ))}
       </div>
 
-      {/* Cybernetic HUD elements: Likes, Shrinking Ring status label */}
-      <div id="ring_alert_overlay" className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-rose-500/90 border border-thin border-rose-400/30 text-white font-bold text-xs py-1 px-4 rounded-full shadow-lg shadow-rose-950/20 backdrop-blur-md flex items-center gap-2 pointer-events-none select-none uppercase tracking-wider animate-pulse">
-        <span className="w-2.5 h-2.5 bg-white rounded-full animate-ping" />
-        Safe Zone: {Math.max(0, Math.floor(safeZoneRadius))}m
-      </div>
     </div>
   );
 });

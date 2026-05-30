@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 export interface TikTokEvent {
-  type: 'chat' | 'gift' | 'member' | 'like' | 'roomUser' | 'follow' | 'share' | 'connected' | 'disconnected' | 'error' | 'status' | 'play_youtube' | 'update_queue' | 'toggle_autoplay' | 'toggle_shuffle' | 'jukebox_state' | 'init_assets' | 'import_obj' | 'clear_objs' | 'change_floor' | 'trigger_disco';
+  type: 'chat' | 'gift' | 'member' | 'like' | 'roomUser' | 'follow' | 'share' | 'connected' | 'disconnected' | 'error' | 'status' | 'play_youtube' | 'update_queue' | 'toggle_autoplay' | 'toggle_shuffle' | 'jukebox_state' | 'init_assets' | 'import_obj' | 'clear_objs' | 'change_floor' | 'trigger_disco' | 'youtube_connected' | 'youtube_disconnected' | 'skip_youtube';
+
   user?: string;
   nickname?: string;
   text?: string;
@@ -50,6 +51,8 @@ export interface TikTokLiveOptions {
   onClearObjs?: () => void;
   onFloorThemeChange?: (theme: string) => void;
   onDiscoModeChange?: (duration: number) => void;
+  onYoutubeConnectionChange?: (connected: boolean, youtubeId?: string) => void;
+  onSkipYoutube?: () => void;
 }
 
 export function useTikTokLive(options: TikTokLiveOptions = {}) {
@@ -75,6 +78,8 @@ export function useTikTokLive(options: TikTokLiveOptions = {}) {
     onClearObjs,
     onFloorThemeChange,
     onDiscoModeChange,
+    onYoutubeConnectionChange,
+    onSkipYoutube,
   } = options;
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -82,6 +87,8 @@ export function useTikTokLive(options: TikTokLiveOptions = {}) {
   const [wsConnected, setWsConnected] = useState(false);
   const [tikTokConnected, setTikTokConnected] = useState(false);
   const [connectedUsername, setConnectedUsername] = useState<string | undefined>();
+  const [youtubeConnected, setYoutubeConnected] = useState(false);
+  const [connectedYoutubeId, setConnectedYoutubeId] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
 
   const connect = useCallback((username: string, sessionId?: string) => {
@@ -98,6 +105,22 @@ export function useTikTokLive(options: TikTokLiveOptions = {}) {
     }
     setTikTokConnected(false);
     setConnectedUsername(undefined);
+  }, []);
+
+  const connectYoutube = useCallback((youtubeId: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError('Relay server not connected');
+      return;
+    }
+    wsRef.current.send(JSON.stringify({ type: 'connect_youtube', youtubeId }));
+  }, []);
+
+  const disconnectYoutube = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'disconnect_youtube' }));
+    }
+    setYoutubeConnected(false);
+    setConnectedYoutubeId(undefined);
   }, []);
 
   // WebSocket connection management
@@ -139,6 +162,16 @@ export function useTikTokLive(options: TikTokLiveOptions = {}) {
             }
             // Update connection state di App berdasarkan status dari server
             onConnectionChange?.(!!data.connected, data.username as string | undefined);
+
+            // Sync YouTube status
+            setYoutubeConnected(!!(data as any).youtubeConnected);
+            if ((data as any).youtubeChannelId) {
+              setConnectedYoutubeId((data as any).youtubeChannelId);
+              onYoutubeConnectionChange?.(!!(data as any).youtubeConnected, (data as any).youtubeChannelId);
+            } else {
+              setConnectedYoutubeId(undefined);
+              onYoutubeConnectionChange?.(false);
+            }
             break;
 
           case 'connected':
@@ -152,6 +185,19 @@ export function useTikTokLive(options: TikTokLiveOptions = {}) {
             setTikTokConnected(false);
             setConnectedUsername(undefined);
             onConnectionChange?.(false);
+            break;
+
+          case 'youtube_connected':
+            setYoutubeConnected(true);
+            setConnectedYoutubeId((data as any).youtubeId);
+            setError(null);
+            onYoutubeConnectionChange?.(true, (data as any).youtubeId);
+            break;
+
+          case 'youtube_disconnected':
+            setYoutubeConnected(false);
+            setConnectedYoutubeId(undefined);
+            onYoutubeConnectionChange?.(false);
             break;
 
           case 'chat':
@@ -221,6 +267,10 @@ export function useTikTokLive(options: TikTokLiveOptions = {}) {
             onClearObjs?.();
             break;
 
+          case 'skip_youtube':
+            onSkipYoutube?.();
+            break;
+
           case 'change_floor':
             if ((data as any).theme) onFloorThemeChange?.((data as any).theme);
             break;
@@ -277,9 +327,13 @@ export function useTikTokLive(options: TikTokLiveOptions = {}) {
     wsConnected,
     tikTokConnected,
     connectedUsername,
+    youtubeConnected,
+    connectedYoutubeId,
     error,
     connect,
     disconnect,
+    connectYoutube,
+    disconnectYoutube,
     send,
   };
 }

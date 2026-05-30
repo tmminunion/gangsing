@@ -27,6 +27,7 @@
     "tiktok-live-connector": "^2.1.1-beta1",
     "vite": "^6.2.3",
     "ws": "^8.21.0",
+    "youtube-chat": "^2.2.0",
     "yt-search": "^2.13.1"
   },
   "devDependencies": {

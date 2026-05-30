@@ -5,6 +5,7 @@ import { WebcastPushConnection, WebcastEvent, ControlEvent } from 'tiktok-live-c
 import yts from 'yt-search';
 import fs from 'fs';
 import path from 'path';
+import { LiveChat } from 'youtube-chat';
 
 // ========== Global Error Guards (prevent crashes from library exceptions) ==========
 process.on('uncaughtException', (err: any) => {
@@ -415,6 +416,193 @@ async function checkAndAutoFillQueue() {
   }
 }
 
+// ========== YouTube Live Chat Helper & Processing ==========
+function processChatMessage(handle: string, nick: string, text: string) {
+  const msg = {
+    type: 'chat',
+    user: handle,
+    nickname: nick,
+    text: text,
+    timestamp: Date.now(),
+  };
+  console.log(`💬 [Chat] ${nick} (@${handle}): ${text}`);
+  broadcast(msg);
+
+  // Jukebox auto-play/queue via chat comment
+  const trimmedText = text.trim();
+  const match = trimmedText.match(/^(?:music|play|mainkan|putar|request|next)\s+(.+)/i);
+  const discoMatch = trimmedText.match(/^!(?:disco|party)/i);
+
+  if (discoMatch) {
+    console.log(`🪩 Disco mode requested via chat`);
+    broadcast({ type: 'trigger_disco', duration: 15 });
+  }
+
+  if (match) {
+    const query = match[1].trim();
+    if (query) {
+      yts(query).then((r) => {
+        if (r.videos && r.videos.length > 0) {
+          const song = { videoId: r.videos[0].videoId, title: r.videos[0].title };
+          console.log(`🎵 Jukebox requested via chat: ${song.title}`);
+          if (!currentYoutubeId) {
+            currentYoutubeId = song.videoId;
+            currentYoutubeTitle = song.title;
+            broadcast({ type: 'play_youtube', videoId: song.videoId, title: song.title });
+            saveJukeboxState();
+            checkAndAutoFillQueue();
+          } else {
+            jukeboxQueue.push(song);
+            broadcast({ type: 'update_queue', queue: jukeboxQueue });
+            saveJukeboxState();
+            checkAndAutoFillQueue();
+          }
+        }
+      }).catch(err => {
+        console.error('Jukebox search failed:', err);
+      });
+    }
+  }
+}
+
+// ========== YouTube Live Connection Management ==========
+let currentYoutubeConnection: LiveChat | null = null;
+let currentYoutubeChannelId: string | null = null;
+let isYoutubeConnected = false;
+
+function parseYoutubeId(input: string): { channelId: string } | { liveId: string } | { handle: string } {
+  const trimmed = input.trim();
+  try {
+    if (trimmed.includes('youtube.com') || trimmed.includes('youtu.be')) {
+      const url = new URL(trimmed.startsWith('http') ? trimmed : `https://${trimmed}`);
+      if (url.searchParams.has('v')) {
+        return { liveId: url.searchParams.get('v')! };
+      }
+      if (url.pathname.startsWith('/watch/')) {
+        const parts = url.pathname.split('/');
+        return { liveId: parts[2] };
+      }
+      if (url.hostname === 'youtu.be') {
+        const id = url.pathname.slice(1);
+        if (id) return { liveId: id };
+      }
+      if (url.pathname.startsWith('/channel/')) {
+        const parts = url.pathname.split('/');
+        return { channelId: parts[2] };
+      }
+      if (url.pathname.startsWith('/@')) {
+        const parts = url.pathname.split('/');
+        return { handle: parts[1] };
+      }
+    }
+  } catch (e) {}
+  if (trimmed.startsWith('@')) {
+    return { handle: trimmed };
+  }
+  if (trimmed.startsWith('UC') && trimmed.length === 24) {
+    return { channelId: trimmed };
+  }
+  return { liveId: trimmed };
+}
+
+async function connectToYoutube(youtubeId: string) {
+  disconnectFromYoutube();
+  currentYoutubeChannelId = youtubeId;
+
+  try {
+    const options = parseYoutubeId(youtubeId);
+    console.log(`[YouTube] Connecting using options:`, options);
+    
+    const liveChat = new LiveChat(options);
+
+    liveChat.on('chat', (chatItem) => {
+      const text = chatItem.message.map((item: any) => {
+        if ('text' in item) return item.text;
+        if ('emojiText' in item) return item.emojiText;
+        return '';
+      }).join('');
+
+      const authorName = chatItem.author.name || 'Anonymous';
+      const channelId = chatItem.author.channelId || 'unknown';
+
+      // 1. Process as chat command/msg
+      processChatMessage(channelId, authorName, text);
+
+      // 2. Map Super Chat to Gift
+      if (chatItem.superchat) {
+        const amountStr = chatItem.superchat.amount || '';
+        console.log(`[YouTube SuperChat] ${authorName} sent ${amountStr}: ${text}`);
+        const cleanAmount = parseInt(amountStr.replace(/[^0-9]/g, ''), 10) || 0;
+        
+        let giftName = 'Rose';
+        let giftAmount = 1;
+        let giftId = 5655; // Rose
+
+        if (cleanAmount >= 100000 || (cleanAmount > 0 && cleanAmount <= 100 && cleanAmount >= 20)) {
+          giftName = 'Universe';
+          giftId = 13248;
+        } else if (cleanAmount >= 50000 || (cleanAmount > 0 && cleanAmount <= 20 && cleanAmount >= 5)) {
+          giftName = 'Donut';
+          giftId = 12965;
+        } else if (cleanAmount >= 10000 || (cleanAmount > 0 && cleanAmount > 1 && cleanAmount < 5)) {
+          giftName = 'Finger Heart';
+          giftId = 12750;
+        }
+
+        const giftMsg = {
+          type: 'gift',
+          user: channelId,
+          nickname: authorName,
+          gift: giftName,
+          giftId: giftId,
+          amount: giftAmount,
+          timestamp: Date.now(),
+        };
+        broadcast(giftMsg);
+      }
+    });
+
+    liveChat.on('error', (err: any) => {
+      console.error('[YouTube] LiveChat error:', err?.message || err);
+      broadcast({ type: 'error', message: `YouTube Live Chat error: ${err?.message || err}` });
+    });
+
+    liveChat.on('start', (liveId: string) => {
+      console.log(`✅ Started YouTube LiveChat scraping for: ${liveId}`);
+      isYoutubeConnected = true;
+      broadcast({ type: 'youtube_connected', youtubeId });
+    });
+
+    liveChat.on('end', (reason?: string) => {
+      console.warn(`⚠️ YouTube LiveChat ended: ${reason}`);
+      isYoutubeConnected = false;
+      broadcast({ type: 'youtube_disconnected' });
+    });
+
+    const ok = await liveChat.start();
+    if (!ok) {
+      throw new Error("Could not start YouTube live chat parsing.");
+    }
+    currentYoutubeConnection = liveChat;
+  } catch (err: any) {
+    console.error('❌ Failed to connect to YouTube Live:', err?.message || err);
+    broadcast({ type: 'error', message: `Failed to connect to YouTube Live: ${err?.message || err}` });
+    isYoutubeConnected = false;
+    currentYoutubeConnection = null;
+  }
+}
+
+function disconnectFromYoutube() {
+  if (currentYoutubeConnection) {
+    try {
+      currentYoutubeConnection.stop('User disconnected');
+    } catch (_) {}
+    currentYoutubeConnection = null;
+  }
+  isYoutubeConnected = false;
+  currentYoutubeChannelId = null;
+}
+
 // ========== TikTok Live Connection Management ==========
 let currentConnection: WebcastPushConnection | null = null;
 let currentUsername: string | null = null;
@@ -514,51 +702,7 @@ async function connectToTikTok(username: string) {
   connection.on(WebcastEvent.CHAT, (data: any) => {
     const handle = data.uniqueId || 'unknown';
     const nick = data.nickname || data.uniqueId || 'viewer';
-    const msg = {
-      type: 'chat',
-      user: handle,
-      nickname: nick,
-      text: data.comment || '',
-      timestamp: Date.now(),
-    };
-    console.log(`💬 ${nick} (@${handle}): ${msg.text}`);
-    broadcast(msg);
-
-    // Jukebox auto-play/queue via chat comment
-    const text = (msg.text || '').trim();
-    const match = text.match(/^(?:music|play|mainkan|putar|request|next)\s+(.+)/i);
-    const discoMatch = text.match(/^!(?:disco|party)/i);
-
-    if (discoMatch) {
-      console.log(`🪩 Disco mode requested via chat`);
-      broadcast({ type: 'trigger_disco', duration: 15 });
-    }
-
-    if (match) {
-      const query = match[1].trim();
-      if (query) {
-        yts(query).then((r) => {
-          if (r.videos && r.videos.length > 0) {
-            const song = { videoId: r.videos[0].videoId, title: r.videos[0].title };
-            console.log(`🎵 Jukebox requested via chat: ${song.title}`);
-            if (!currentYoutubeId) {
-              currentYoutubeId = song.videoId;
-              currentYoutubeTitle = song.title;
-              broadcast({ type: 'play_youtube', videoId: song.videoId, title: song.title });
-              saveJukeboxState();
-              checkAndAutoFillQueue();
-            } else {
-              jukeboxQueue.push(song);
-              broadcast({ type: 'update_queue', queue: jukeboxQueue });
-              saveJukeboxState();
-              checkAndAutoFillQueue();
-            }
-          }
-        }).catch(err => {
-          console.error('Jukebox search failed:', err);
-        });
-      }
-    }
+    processChatMessage(handle, nick, data.comment || '');
   });
 
   connection.on(WebcastEvent.GIFT, (data: any) => {
@@ -717,6 +861,8 @@ wss.on('connection', (ws: WebSocket) => {
     connected: isTikTokConnected,
     username: currentUsername,
     hasSessionId: !!activeSessionId,
+    youtubeConnected: isYoutubeConnected,
+    youtubeChannelId: currentYoutubeChannelId,
   }));
 
   // Send current Jukebox state
@@ -763,6 +909,27 @@ wss.on('connection', (ws: WebSocket) => {
       case 'disconnect':
         disconnectFromTikTok();
         broadcast({ type: 'disconnected' });
+        break;
+
+      case 'connect_youtube': {
+        const youtubeId = data.youtubeId as string;
+        if (!youtubeId) {
+          ws.send(JSON.stringify({ type: 'error', message: 'YouTube Channel ID / Live URL required' }));
+          return;
+        }
+        connectToYoutube(youtubeId).catch(() => {
+          // Error already broadcast
+        });
+        break;
+      }
+
+      case 'disconnect_youtube':
+        disconnectFromYoutube();
+        broadcast({ type: 'youtube_disconnected' });
+        break;
+
+      case 'skip_youtube':
+        broadcast({ type: 'skip_youtube' });
         break;
 
       case 'play_youtube': {

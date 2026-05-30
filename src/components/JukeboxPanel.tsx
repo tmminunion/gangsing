@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Music, Play, Trash2, Plus, ListMusic, VolumeX, Loader2, Repeat, Shuffle } from 'lucide-react';
+import { Search, Music, Play, Trash2, Plus, ListMusic, VolumeX, Loader2, Repeat, Shuffle, SkipForward } from 'lucide-react';
 
 interface JukeboxPanelProps {
   currentYoutubeId: string | null;
@@ -102,12 +102,12 @@ export function JukeboxPanel({
   return (
     <div className="bg-slate-950/80 border border-slate-900 rounded-3xl p-5 flex flex-col gap-4 backdrop-blur-md h-full max-h-[490px]">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-white/5 pb-3">
+      <div className="flex items-center justify-between border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl">
             <Music className="w-4 h-4" />
           </div>
-          <span className="text-sm font-black tracking-widest text-zinc-200 uppercase font-sans">Jukebox YouTube</span>
+          <span className="text-sm font-black tracking-widest text-emerald-500 uppercase font-sans">Jukebox YouTube</span>
         </div>
         <div className="flex items-center gap-1.5">
           <button
@@ -115,7 +115,7 @@ export function JukeboxPanel({
             className={`p-2 rounded-xl transition-all cursor-pointer border ${
               isShuffle
                 ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
-                : 'bg-slate-900 border-white/5 text-slate-500 hover:text-slate-300'
+                : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
             }`}
             title={isShuffle ? 'Shuffle aktif' : 'Shuffle mati'}
           >
@@ -126,7 +126,7 @@ export function JukeboxPanel({
             className={`p-2 rounded-xl transition-all cursor-pointer border ${
               isAutoplay
                 ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20'
-                : 'bg-slate-900 border-white/5 text-slate-500 hover:text-slate-300'
+                : 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300'
             }`}
             title={isAutoplay ? 'Autoplay aktif (similar search)' : 'Autoplay mati'}
           >
@@ -138,7 +138,7 @@ export function JukeboxPanel({
               if (!showSearch) setSearchResults([]);
             }}
             className={`p-2 rounded-xl transition-all cursor-pointer border ${
-              showSearch ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-900 border-white/5 text-slate-400 hover:text-white'
+              showSearch ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-emerald-400'
             }`}
             title="Cari lagu"
           >
@@ -155,14 +155,23 @@ export function JukeboxPanel({
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
               <span className="text-[9px] text-emerald-400 font-mono font-bold uppercase tracking-wider">Sedang Diputar</span>
             </div>
-            <button
-              onClick={handleStopMusic}
-              className="text-[9px] px-2.5 py-1.5 bg-rose-500/15 hover:bg-rose-500/30 text-rose-400 rounded-xl cursor-pointer transition-colors border border-rose-500/10 flex items-center gap-1 font-bold font-sans"
-            >
-              <VolumeX className="w-3 h-3" /> STOP
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => onSendSocketMessage({ type: 'skip_youtube' })}
+                className="text-[9px] px-2.5 py-1.5 bg-amber-500/15 hover:bg-amber-500/30 text-amber-400 border border-amber-500/10 rounded-xl cursor-pointer transition-colors flex items-center gap-1 font-bold font-sans"
+                title="Putar lagu berikutnya"
+              >
+                <SkipForward className="w-3 h-3" /> NEXT
+              </button>
+              <button
+                onClick={handleStopMusic}
+                className="text-[9px] px-2.5 py-1.5 bg-rose-500/15 hover:bg-rose-500/30 text-rose-400 rounded-xl cursor-pointer transition-colors border border-rose-500/10 flex items-center gap-1 font-bold font-sans"
+              >
+                <VolumeX className="w-3 h-3" /> STOP
+              </button>
+            </div>
           </div>
-          <p className="text-xs font-black text-white truncate pl-1 font-sans">{currentYoutubeTitle || 'Unknown Title'}</p>
+          <p className="text-xs font-black text-emerald-400 truncate pl-1 font-sans">{currentYoutubeTitle || 'Unknown Title'}</p>
         </div>
       ) : (
         <div className="bg-slate-950/40 rounded-2xl p-5 text-center border border-dashed border-slate-800">
@@ -174,7 +183,7 @@ export function JukeboxPanel({
 
       {/* Search Input Box */}
       {showSearch && (
-        <div className="bg-black/30 rounded-2xl p-3 border border-white/5 flex flex-col gap-3">
+        <div className="bg-black/30 rounded-2xl p-3 border border-slate-800 flex flex-col gap-3">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
@@ -183,14 +192,14 @@ export function JukeboxPanel({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari judul lagu..."
-                className="w-full pl-9 pr-3 py-2 bg-black/40 border border-white/10 rounded-xl text-xs text-white outline-none focus:ring-1 focus:ring-emerald-500 placeholder-slate-600 font-sans"
+                className="w-full pl-9 pr-3 py-2 bg-black/40 border border-slate-700 rounded-xl text-xs text-emerald-400 outline-none focus:ring-1 focus:ring-emerald-500 placeholder-slate-600 font-sans"
                 autoFocus
               />
             </div>
             <button
               type="submit"
               disabled={isSearching || !searchQuery.trim()}
-              className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-white text-[10px] font-bold rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1 font-sans"
+              className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 text-emerald-400 text-[10px] font-bold rounded-xl cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-1 font-sans"
             >
               {isSearching ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
               Cari
@@ -206,7 +215,7 @@ export function JukeboxPanel({
                   <button
                     key={q}
                     onClick={() => handleRecentSearchClick(q)}
-                    className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 text-[9px] rounded-lg cursor-pointer transition-colors border border-white/5 font-sans"
+                    className="px-2 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 text-[9px] rounded-lg cursor-pointer transition-colors border border-slate-800 font-sans"
                   >
                     {q}
                   </button>
@@ -217,44 +226,46 @@ export function JukeboxPanel({
 
           {/* Search results */}
           {searchResults.length > 0 && (
-            <div className="flex flex-col gap-1.5 border-t border-white/5 pt-2">
-              <span className="text-[8px] text-emerald-400 font-mono font-bold uppercase tracking-wider">Hasil Pencarian</span>
-              {searchResults.map((result) => (
-                <div
-                  key={result.videoId}
-                  className="flex items-center gap-2.5 p-2 bg-black/40 rounded-xl border border-white/5 hover:bg-slate-900/60 transition-colors group cursor-pointer"
-                  onClick={() => handleSearchResultClick(result)}
-                >
-                  {result.thumbnail && (
-                    <img
-                      src={result.thumbnail}
-                      alt={result.title}
-                      className="w-12 h-9 rounded object-cover shrink-0 bg-slate-850"
-                      loading="lazy"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-bold text-white truncate leading-tight font-sans">{result.title}</p>
-                    {result.duration && (
-                      <span className="text-[8px] text-slate-500 font-mono">{result.duration}</span>
-                    )}
-                  </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSearchResultClick(result);
-                    }}
-                    className={`p-1.5 rounded-lg cursor-pointer transition-all border shrink-0 ${
-                      currentYoutubeId
-                        ? 'bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border-emerald-500/20'
-                        : 'bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border-blue-500/20'
-                    }`}
-                    title={currentYoutubeId ? 'Tambah ke antrian' : 'Putar sekarang'}
+            <div className="flex flex-col gap-2 border-t border-slate-800 pt-3">
+              <span className="text-[10px] text-emerald-400 font-mono font-bold uppercase tracking-wider">Hasil Pencarian</span>
+              <div className="custom-scrollbar overflow-y-auto max-h-[260px] flex flex-col gap-2 pr-1">
+                {searchResults.map((result) => (
+                  <div
+                    key={result.videoId}
+                    className="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-slate-800 hover:bg-slate-900/60 transition-colors group cursor-pointer shrink-0"
+                    onClick={() => handleSearchResultClick(result)}
                   >
-                    {currentYoutubeId ? <Plus className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              ))}
+                    {result.thumbnail && (
+                      <img
+                        src={result.thumbnail}
+                        alt={result.title}
+                        className="w-20 h-14 rounded-lg object-cover shrink-0 bg-slate-850 shadow-md shadow-black/50"
+                        loading="lazy"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-emerald-400 leading-tight font-sans line-clamp-2">{result.title}</p>
+                      {result.duration && (
+                        <span className="text-xs text-slate-400 font-mono mt-1 block">{result.duration}</span>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSearchResultClick(result);
+                      }}
+                      className={`p-2.5 rounded-xl cursor-pointer transition-all border shrink-0 ${
+                        currentYoutubeId
+                          ? 'bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border-emerald-500/20'
+                          : 'bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border-blue-500/20'
+                      }`}
+                      title={currentYoutubeId ? 'Tambah ke antrian' : 'Putar sekarang'}
+                    >
+                      {currentYoutubeId ? <Plus className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -278,22 +289,22 @@ export function JukeboxPanel({
             <p className="text-[10px] text-slate-600 font-mono italic">Antrian kosong</p>
           </div>
         ) : (
-          <div className="custom-scrollbar overflow-y-auto max-h-[160px] flex flex-col gap-1.5 pr-1">
+          <div className="custom-scrollbar overflow-y-auto max-h-[135px] flex flex-col gap-2 pr-1">
             {jukeboxQueue.map((item, i) => (
               <div
                 key={`${item.videoId}-${i}`}
-                className="flex items-center gap-2 p-2 bg-slate-900/30 rounded-xl border border-white/5 group hover:bg-slate-900/60 transition-all"
+                className="flex items-center gap-3 p-3 bg-slate-900/30 rounded-xl border border-slate-800 group hover:bg-slate-900/60 transition-all shrink-0"
               >
-                <span className="text-[9px] font-mono text-slate-500 w-4 text-right shrink-0">#{i + 1}</span>
+                <span className="text-xs font-mono text-slate-500 w-5 text-right shrink-0">#{i + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] text-slate-200 font-bold font-sans truncate">{item.title}</p>
+                  <p className="text-sm text-slate-400 font-bold font-sans truncate">{item.title}</p>
                 </div>
                 <button
                   onClick={() => handleRemoveFromQueue(i)}
-                  className="p-1 text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all cursor-pointer rounded hover:bg-rose-500/10 shrink-0"
+                  className="p-1.5 text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all cursor-pointer rounded-lg hover:bg-rose-500/10 shrink-0"
                   title="Hapus"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             ))}
