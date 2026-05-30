@@ -1,6 +1,6 @@
 {
-  "currentYoutubeId": "RSWPTbP2uik",
-  "currentYoutubeTitle": "WAWES feat GUYON WATON - DUMES (Official Video)",
+  "currentYoutubeId": "8JxUI2lcAWA",
+  "currentYoutubeTitle": "Kidung Arwah Penari: Ritual Gamelan Terlarang yang Bangkit di Lembah Terlarang",
   "jukeboxQueue": [
     {
       "videoId": "vBddLe_vZrs",
@@ -51,20 +51,12 @@
       "title": "04. Prahara Jiwa"
     },
     {
-      "videoId": "M3vTp4ulp3E",
-      "title": "SANGKARA - JAGAD SEMESTA (OFFICIAL MUSIC VIDEO)"
-    },
-    {
       "videoId": "RXkzaoi1OeY",
       "title": "Pamali: Tumbal (2025) full movie | newest Indonesian film in theaters"
     },
     {
       "videoId": "QnfuPao80-g",
       "title": "CRAH (Crah Agawe Bubrah) the movie"
-    },
-    {
-      "videoId": "bkw1H9kV2pg",
-      "title": "Hattan -  Gerhana"
     },
     {
       "videoId": "F_arnY_ZQbU",
@@ -135,10 +127,6 @@
       "title": "Kidung Jawa - Nyanyian Penjaga Hati Di Kesunyian Malam"
     },
     {
-      "videoId": "8JxUI2lcAWA",
-      "title": "Kidung Arwah Penari: Ritual Gamelan Terlarang yang Bangkit di Lembah Terlarang"
-    },
-    {
       "videoId": "vX2geHIZtt4",
       "title": "LAGU LEMBAH DUKA, BIKIN TERHARU! COVER BY RIZA \\ VOCAL CANTIK & SUARANYA MERDU"
     },
@@ -149,10 +137,6 @@
     {
       "videoId": "pU0UJTbKnPU",
       "title": "Gending Sakrall || Mantra Memuja & Memanggil Kanjeng Ratu Kidul  ~Buktikan Sendiri~ #nyirorokidul"
-    },
-    {
-      "videoId": "XLYFCc4UH-I",
-      "title": "DENNY CAKNAN FEAT. WAWES - DUMES (Official Music Video)"
     },
     {
       "videoId": "iWit_B3DNsc",
@@ -257,10 +241,6 @@
     {
       "videoId": "JOu1ODdo4xU",
       "title": "Jeritan Nurani"
-    },
-    {
-      "videoId": "1XHrqoveUc4",
-      "title": "PANTUN JANDA - Difarina Indra Adella Ft. Fendik Adella - OM ADELLA"
     },
     {
       "videoId": "IyKuS3z4zb0",
@@ -377,10 +357,6 @@
     {
       "videoId": "eCz0JdPqSaA",
       "title": "Slank - Ku Tak Bisa (Official Music Video)"
-    },
-    {
-      "videoId": "9LtjmpnQXLQ",
-      "title": "Sheila On 7 - Sephia (Lyric Video)"
     },
     {
       "videoId": "0DQVH-vgHfs",
@@ -517,6 +493,14 @@
     {
       "videoId": "dGcGbF4ex5o",
       "title": "Sheila on 7 - Dan (Official Music Video)"
+    },
+    {
+      "videoId": "9LtjmpnQXLQ",
+      "title": "Sheila On 7 - Sephia (Lyric Video)"
+    },
+    {
+      "videoId": "jnzSLYLD0m0",
+      "title": "MALAM TERAKHIR - Simpatik Music | Fira Cantika X Irwan Krisdiyanto (Official Music Video)"
     }
   ],
   "jukeboxHistory": [
@@ -1239,6 +1223,30 @@
     {
       "videoId": "RSWPTbP2uik",
       "title": "WAWES feat GUYON WATON - DUMES (Official Video)"
+    },
+    {
+      "videoId": "1XHrqoveUc4",
+      "title": "PANTUN JANDA - Difarina Indra Adella Ft. Fendik Adella - OM ADELLA"
+    },
+    {
+      "videoId": "9LtjmpnQXLQ",
+      "title": "Sheila On 7 - Sephia (Lyric Video)"
+    },
+    {
+      "videoId": "M3vTp4ulp3E",
+      "title": "SANGKARA - JAGAD SEMESTA (OFFICIAL MUSIC VIDEO)"
+    },
+    {
+      "videoId": "bkw1H9kV2pg",
+      "title": "Hattan -  Gerhana"
+    },
+    {
+      "videoId": "XLYFCc4UH-I",
+      "title": "DENNY CAKNAN FEAT. WAWES - DUMES (Official Music Video)"
+    },
+    {
+      "videoId": "8JxUI2lcAWA",
+      "title": "Kidung Arwah Penari: Ritual Gamelan Terlarang yang Bangkit di Lembah Terlarang"
     }
   ],
   "isAutoplay": true,

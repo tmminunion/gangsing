@@ -289,20 +289,20 @@ export function JukeboxPanel({
             <p className="text-[10px] text-slate-600 font-mono italic">Antrian kosong</p>
           </div>
         ) : (
-          <div className="custom-scrollbar overflow-y-auto max-h-[135px] flex flex-col gap-2 pr-1">
+          <div className="custom-scrollbar overflow-y-auto flex-1 flex flex-col gap-2 pr-1">
             {jukeboxQueue.map((item, i) => (
               <div
                 key={`${item.videoId}-${i}`}
-                className="flex items-center gap-3 p-3 bg-slate-900/30 rounded-xl border border-slate-800 group hover:bg-slate-900/60 transition-all shrink-0"
+                className="flex items-center gap-3 p-3 bg-slate-900/40 rounded-xl border border-white/5 hover:bg-slate-900/60 transition-all shrink-0"
               >
                 <span className="text-xs font-mono text-slate-500 w-5 text-right shrink-0">#{i + 1}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-slate-400 font-bold font-sans truncate">{item.title}</p>
+                  <p className="text-sm text-slate-300 font-bold font-sans truncate">{item.title}</p>
                 </div>
                 <button
                   onClick={() => handleRemoveFromQueue(i)}
-                  className="p-1.5 text-slate-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition-all cursor-pointer rounded-lg hover:bg-rose-500/10 shrink-0"
-                  title="Hapus"
+                  className="p-2 text-rose-500/70 hover:text-rose-400 transition-all cursor-pointer rounded-lg bg-rose-500/5 hover:bg-rose-500/20 border border-rose-500/10 shrink-0"
+                  title="Hapus lagu"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

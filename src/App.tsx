@@ -1056,17 +1056,19 @@ export default function App() {
           ========================================================================= */}
       {!isDashRoute && (
         <div className="absolute inset-0 z-30 pointer-events-none select-none overflow-hidden">
-          {/* TOP-RIGHT POPUP NOTIFICATIONS — spawn & eliminated */}
-          {topNotifications.length > 0 && (\n            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-40 flex flex-col-reverse gap-2 items-center pointer-events-none select-none">\n              <style>{` @keyframes notifSlideUp { 0% { transform: translateY(40px) scale(0.9); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } } .notif-enter { animation: notifSlideUp 0.3s ease-out forwards; } `}</style>\n              {topNotifications.map((notif) => (\n                <div key={notif.id} className="notif-enter w-[300px] backdrop-blur-md rounded-2xl px-5 py-3 shadow-2xl border" style={{ background: "rgba(0, 0, 0, 0.75)", borderColor: notif.type === "join" ? "rgba(16, 185, 129, 0.4)" : "rgba(239, 68, 68, 0.4)" }}>\n                  <div className="flex items-center gap-3">\n                    <div className={`p-1.5 rounded-lg ${notif.type === "join" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}>{notif.type === "join" ? "📢" : "💀"}</div>\n                    <span className={`text-[11px] font-black leading-tight tracking-tight drop-shadow-sm ${notif.type === "join" ? "text-emerald-400" : "text-red-400"}`}>{notif.text}</span>\n                  </div>\n                </div>\n              ))}\n            </div>\n          )}
-                  </div>
-                  <div className="text-[9px] font-medium mt-0.5" style={{ color: notif.type === 'join' ? 'rgba(134,239,172,0.5)' : 'rgba(252,165,165,0.5)' }}>
-                    {notif.type === 'join' ? 'MASUK ARENA' : 'TERELIMINASI'}
+          {topNotifications.length > 0 && (
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-40 flex flex-col-reverse gap-2 items-center pointer-events-none select-none">
+              <style>{` @keyframes notifSlideUp { 0% { transform: translateY(40px) scale(0.9); opacity: 0; } 100% { transform: translateY(0) scale(1); opacity: 1; } } .notif-enter { animation: notifSlideUp 0.3s ease-out forwards; } `}</style>
+              {topNotifications.map((notif) => (
+                <div key={notif.id} className="notif-enter w-[280px] backdrop-blur-md rounded-2xl px-5 py-3 shadow-2xl border border-white/10" style={{ background: "rgba(0, 0, 0, 0.75)" }}>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-1.5 rounded-lg ${notif.type === "join" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}>{notif.type === "join" ? "📢" : "💀"}</div>
+                    <span className={`text-[11px] font-black leading-tight tracking-tight drop-shadow-sm ${notif.type === "join" ? "text-emerald-400" : "text-red-400"}`}>{notif.text}</span>
                   </div>
                 </div>
               ))}
             </div>
           )}
-
           {/* Empty lobby */}
           {activeLeaderboard.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center p-6 bg-slate-950/85 z-30 backdrop-blur-sm pointer-events-none select-none text-center">
