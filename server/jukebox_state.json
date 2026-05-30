@@ -1,6 +1,6 @@
 {
-  "currentYoutubeId": "06-LSxRzeXY",
-  "currentYoutubeTitle": "HAPPY ASMARA Feat GILGA SAHID - GINIO | Feat. OM SERA ( Official Music Video )",
+  "currentYoutubeId": "RSWPTbP2uik",
+  "currentYoutubeTitle": "WAWES feat GUYON WATON - DUMES (Official Video)",
   "jukeboxQueue": [
     {
       "videoId": "vBddLe_vZrs",
@@ -77,10 +77,6 @@
     {
       "videoId": "NUR30ZzDljA",
       "title": "TERHARU! Jaka Tarub dan NawangWulan Nangis Bersama - Nyi Roro Kidul Eps 25 PART 1"
-    },
-    {
-      "videoId": "v7ZYxKEChKw",
-      "title": "Mantra Buat yang Meninggal#Doa Pitra Puja pada saat Kematian#Cahaya Dharma"
     },
     {
       "videoId": "pU0UJTbKnPU",
@@ -211,10 +207,6 @@
       "title": "Slemanreceh - Banyu Moto (Official Music Video) Eps 2"
     },
     {
-      "videoId": "RSWPTbP2uik",
-      "title": "WAWES feat GUYON WATON - DUMES (Official Video)"
-    },
-    {
       "videoId": "NlqZrERRdZA",
       "title": "Wahyu F Giri - LAMUNAN (Official Music Video)"
     },
@@ -281,10 +273,6 @@
     {
       "videoId": "-g6ygVWS1v8",
       "title": "FUNKOT PALEMBANG - EMAS HANTARAN NEW 2026 BY DJ ALMIRA BERTO"
-    },
-    {
-      "videoId": "9LtjmpnQXLQ",
-      "title": "Sheila On 7 - Sephia (Lyric Video)"
     },
     {
       "videoId": "4tAg2H7tqD0",
@@ -521,6 +509,14 @@
     {
       "videoId": "eXP0JfoVkIE",
       "title": "FUNKOT - AKU KAU SAKITI [ GAMMA 1] NEW REMIX COVER DJ ALMIRA BERTO"
+    },
+    {
+      "videoId": "1K3R7iEQ-qM",
+      "title": "Selamat pagi luka #djsellysemlehoy"
+    },
+    {
+      "videoId": "dGcGbF4ex5o",
+      "title": "Sheila on 7 - Dan (Official Music Video)"
     }
   ],
   "jukeboxHistory": [
@@ -1231,6 +1227,18 @@
     {
       "videoId": "06-LSxRzeXY",
       "title": "HAPPY ASMARA Feat GILGA SAHID - GINIO | Feat. OM SERA ( Official Music Video )"
+    },
+    {
+      "videoId": "v7ZYxKEChKw",
+      "title": "Mantra Buat yang Meninggal#Doa Pitra Puja pada saat Kematian#Cahaya Dharma"
+    },
+    {
+      "videoId": "9LtjmpnQXLQ",
+      "title": "Sheila On 7 - Sephia (Lyric Video)"
+    },
+    {
+      "videoId": "RSWPTbP2uik",
+      "title": "WAWES feat GUYON WATON - DUMES (Official Video)"
     }
   ],
   "isAutoplay": true,

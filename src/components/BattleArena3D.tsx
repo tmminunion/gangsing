@@ -925,9 +925,9 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
           if (nickname) p.username = nickname;
           if (p.status === 'dead') {
             p.status = 'alive';
-            p.hp = isPremium ? 150 : 100;
-            p.maxHp = isPremium ? 150 : 100;
-            p.shield = 50;
+            p.hp = isPremium ? 500 : 300;
+            p.maxHp = isPremium ? 500 : 300;
+            p.shield = 100;
             p.weapon = isPremium ? 'glowing_laser' : 'fist';
             p.size = isPremium ? 1.5 : 1.0;
             // Respawn close to center
@@ -939,15 +939,15 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
             onLiveFeedMessage({
               id: Math.random().toString(),
               type: 'join',
-              text: `@${nickname || username} bangkit kembali dan terjun ke arena!`,
+              text: `@${nickname || username} bangkit kembali dengan semangat baru!`,
               time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
             });
             createSpawnExplosion(p.x, 0, p.z, p.color);
           } else {
             // Heal if already alive
-            p.hp = Math.min(p.maxHp, p.hp + 40);
-            p.shield = Math.min(100, p.shield + 20);
-            p.lastActionText = "GABUNG / PULIH";
+            p.hp = Math.min(p.maxHp, p.hp + 100);
+            p.shield = Math.min(150, p.shield + 50);
+            p.lastActionText = "💖 PULIH TOTAL";
             p.lastActionTime = Date.now();
             
           }
@@ -964,9 +964,9 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
         id,
         username: nickname || username,
         avatarSeed: getRandomSeed(),
-        hp: isPremium ? 150 : 100,
-        maxHp: isPremium ? 150 : 100,
-        shield: isPremium ? 80 : 25,
+        hp: isPremium ? 500 : 300,
+        maxHp: isPremium ? 500 : 300,
+        shield: isPremium ? 150 : 50,
         mental: 100,
         maxMental: 100,
         kills: 0,
@@ -2911,11 +2911,11 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mainRendererRef.current = renderer;
     // 4. Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); // Diubah jadi lebih terang (putih dengan intensitas 2.0)
+    const ambientLight = new THREE.AmbientLight(0xffffff, 3.5); // Diterangkan lagi biar silau estetik
     scene.add(ambientLight);
     ambientLightRef.current = ambientLight;
 
-    const dirLight = new THREE.DirectionalLight(0x8B5CF6, 4.0); // Diterangkan intensitasnya menjadi 4.0
+    const dirLight = new THREE.DirectionalLight(0xffffff, 5.5); // Putih bersih dan super terang
     dirLight.position.set(15, 30, 10);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 1024;
