@@ -15,7 +15,6 @@ interface BattleArena3DProps {
   onKillEvent?: (data: { killer: string; victim: string; killerColor: string; streak: number; streakText: string }) => void;
   onMusicAirdropTriggered?: () => void;
 }
-
 export interface BattleArenaRef {
   addPlayer: (username: string, nickname: string, isPremium?: boolean, forcedColor?: string) => void;
   triggerComment: (username: string, text: string, nickname?: string) => void;
@@ -28,6 +27,7 @@ export interface BattleArenaRef {
   importOBJFromUrl: (url: string, filename: string) => void;
   clearAllImportedOBJs: () => void;
   changeFloorTheme: (theme: string) => void;
+  triggerDiscoMode: (duration: number) => void;
   respawnObstacles: () => void;
 }
 
@@ -106,6 +106,8 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
   const currentWeatherRef = useRef<string>('normal');
   const ambientLightRef = useRef<THREE.AmbientLight | null>(null);
   const dirLightRef = useRef<THREE.DirectionalLight | null>(null);
+  const discoTimerRef = useRef<number>(0);
+  const discoActiveRef = useRef<boolean>(false);
   const spotlightRef = useRef<THREE.SpotLight | null>(null);
   const movingPointLightRef = useRef<THREE.PointLight | null>(null);
   const movingLightOrbRef = useRef<THREE.Mesh | null>(null);
@@ -894,6 +896,12 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
 
     changeFloorTheme: (theme: string) => {
       applyFloorTheme(theme);
+    },
+
+    triggerDiscoMode: (duration: number) => {
+      console.log('🕺 [Disco] Activating disco mode for', duration, 'seconds');
+      discoTimerRef.current = duration;
+      discoActiveRef.current = true;
     },
 
     respawnObstacles: () => {
@@ -3324,6 +3332,32 @@ export const BattleArena3D = forwardRef<BattleArenaRef, BattleArena3DProps>(({
       const now = performance.now();
       const delta = (now - lastTime) / 1000;
       lastTime = now;
+
+      // 🕺 Disco Mode animation loop
+      if (discoActiveRef.current) {
+        discoTimerRef.current -= delta;
+        if (discoTimerRef.current <= 0) {
+          discoActiveRef.current = false;
+          if (ambientLightRef.current) {
+            ambientLightRef.current.color.setHex(0xffffff);
+            ambientLightRef.current.intensity = 2.0;
+          }
+          if (dirLightRef.current) {
+            dirLightRef.current.color.setHex(0x8B5CF6);
+          }
+        } else {
+          const t = Math.floor(now / 150);
+          const colors = [0xff00ff, 0x00ffff, 0xffff00, 0xff0000, 0x00ff00, 0x0000ff];
+          const chosenColor = colors[t % colors.length];
+          if (ambientLightRef.current) {
+            ambientLightRef.current.color.setHex(chosenColor);
+            ambientLightRef.current.intensity = 3.0;
+          }
+          if (dirLightRef.current) {
+            dirLightRef.current.color.setHex(colors[(t + 2) % colors.length]);
+          }
+        }
+      }
 
       // Pulse the safe zone boundary ring
       if (safeZonePulseMeshRef.current) {
